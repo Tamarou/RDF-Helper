@@ -1,0 +1,32 @@
+RDF/Helper version 0.01
+=======================
+This Perl module suite is intended to provide a common abstract API for existing Perl RDF toolkits in much the same way that the Perl DBI offers a common interface to the various Perl database packages.
+
+At the lowest level, RDF::Helper offers a normalized API for finding and parsing RDF documents, adding, updating, and removing triples from RDF models, and serializing those  models into various portable formats (RDF/XML Trix, N3, etc.). Plus, various "perlish" convenience methods are offered as a means to speed application development and, where possible, to take the "yuk" out of dealing with RDF in Perl.
+
+Where the underlying toolkit offers RDF query facilities (SPARQL, RDQL, etc) RDF::Helper offers a DBI emulation layer that offers users an easy and painless way to access RDF data using semantics and methods that are already familiar. For example, rather than using the Redland Perl bindings directly to generate a result stream from a query and constructing  Perl data structures manually, RDF::Helper provides the common "while ( my $record = 
+$query->selectrow_hashef )" idiom. 
+
+Where possible and realistic, RDF::Helper provides its normalized API and convenience facilties while still offering direct access to the underlying objects and methods provided by the base packages like RDF::Redland and RDF::Core. The goal is to make dealing with RDF in Perl easy and consistent without blocking power users from accessing any special  features that the underlying packages may offer. 
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2004-2006 Kip Hampton, Mike Nachbaur
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+

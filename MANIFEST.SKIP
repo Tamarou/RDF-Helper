@@ -1,0 +1,10 @@
+MAKEFILE$
+Makefile$
+~$
+.bak$
+\#
+t/TEST$
+blib/
+pm_to_blib
+.DS_Store
+CVS

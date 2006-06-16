@@ -1,0 +1,24 @@
+Changes
+lib/RDF/Helper.pm
+lib/RDF/Helper/Constants.pm
+lib/RDF/Helper/Object.pm
+lib/RDF/Helper/PerlConvenience.pm
+lib/RDF/Helper/RDFCore.pm
+lib/RDF/Helper/RDFRedland.pm
+lib/RDF/Helper/RDFRedland/Query.pm
+lib/RDF/Helper/RDFRedland/TiedPropertyHash.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+META.yml
+README
+t/0_basic.t
+t/1_nodes.t
+t/2_model_basics.t
+t/3_include_model.t
+t/4_include_rdfxml.t
+t/5_rdf2perl.t
+t/6_query_perl.t
+t/7_property_hash.t
+t/8_rdf_object.t
+t/data/use.perl.rss

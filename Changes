@@ -1,0 +1,6 @@
+Revision history for Perl extension RDF::Helper.
+
+0.01  Mon Oct 25 03:02:04 2004
+	- original version; created by h2xs 1.22 with options
+		-XA -n RDF::Helper
+
