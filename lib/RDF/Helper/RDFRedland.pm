@@ -8,7 +8,7 @@ use RDF::Helper::PerlConvenience;
 use RDF::Helper::Object;
 use vars qw( @ISA );
 use Data::Dumper;
-@ISA = qw( RDF::Helper::PerlConvenience );
+@ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
 
 sub new {
     my $proto = shift;
@@ -38,6 +38,10 @@ sub new {
     unless (defined($args{Namespaces}->{'#default'})) {
         $args{Namespaces}->{'#default'} = $args{BaseURI};
     }
+
+    unless (defined($args{QueryInterface})) {
+        $args{QueryInterface} = 'RDF::Helper::RDFRedland::Query';
+    }
     
     my %foo  = reverse %{$args{Namespaces}};
     $args{_NS} = \%foo;
@@ -60,7 +64,7 @@ sub new_literal {
     if ( defined ($type) and !ref( $type ) ) {
         $type = RDF::Redland::URI->new($type);
     }
-    return RDF::Redland::Node->new_literal($val, $type, $lang);
+    return RDF::Redland::Node->new_literal("$val", $type, $lang);
 }
 
 sub new_bnode {
@@ -77,7 +81,7 @@ sub assert_literal {
     my $pred = ref($p) ? $p : RDF::Redland::Node->new(
                                   RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($p) : $p)
                               );
-    my $obj  = ref($o) ? $o : RDF::Redland::Node->new_literal($o);
+    my $obj  = ref($o) ? $o : RDF::Redland::Node->new_literal("$o");
 
     $self->{Model}->add_statement($subj, $pred, $obj);
 }
@@ -178,16 +182,30 @@ sub get_enumerator {
 
     if (defined($s)) {
        $subj = ref($s) ? $s : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($s)
+                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($s) : $s)
                               );
     }    
     if (defined($p)) {
         $pred = ref($p) ? $p : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($p)
+                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($p) : $p)
                               );
     }    
     if (defined($o)) {
-        $obj  = ref($o) ? $o : RDF::Redland::Node->new_literal($o);
+        if ( ref( $o ) ) {
+            $obj = $o;
+        }
+        else {
+            my $testval = $self->{ExpandQNames} ? $self->qname2resolved($o) : $o;
+            my $type = $self->get_perl_type( $testval );
+            if ( $type eq 'resource' ) {
+                $obj = RDF::Redland::Node->new(
+                    RDF::Redland::URI->new($testval)
+                );
+            }
+            else {
+                $obj  = RDF::Redland::Node->new_literal("$testval");
+            }
+        }
     }
 
     return $self->{Model}->find_statements(
@@ -250,13 +268,13 @@ sub get_statements {
     return @ret_array;
 }
 
-sub exists {
-    my $self = shift;
-    if ( $self->count( @_ ) > 0 ) {
-        return 1;
-    }
-    return 0;
-}
+# sub exists {
+#     my $self = shift;
+#     if ( $self->count( @_ ) > 0 ) {
+#         return 1;
+#     }
+#     return 0;
+# }
 
 sub count {
     my $self = shift;
@@ -347,6 +365,19 @@ sub model {
     return $self->{Model};
 }
 
+sub query_interface {
+    my $self = shift;
+    my $new = shift;
+
+    if (defined($new)) {
+        $self->{QueryInterface} = $new;
+        return 1;
+    }
+    
+    $self->{QueryInterface} ||= 'RDF::Helper::RDFRedland::Query';
+    return $self->{QueryInterface};
+}
+
 sub serialize {
     my $self = shift;
     my %args = @_;
@@ -389,91 +420,24 @@ sub serialize {
 sub new_query {
     my $self = shift;
     my ($query_string, $query_lang) = @_;
-    return RDF::Helper::RDFRedland::Query->new( $query_string, $query_lang, $self->model); 
-    #return $query->execute($self->model);
+    
+    my $class = $self->{QueryInterface};
+    eval "require $class";
+    return $class->new( $query_string, $query_lang, $self->model); 
 }
 
 #---------------------------------------------------------------------
 # Perl convenience methods
 #---------------------------------------------------------------------
 
-sub get_perl_type {
-    my $self = shift;
-    my $wtf = shift;
-
-    my $type = ref( $wtf );
-    if ( $type ) {
-        if ( $type eq 'ARRAY' or $type eq 'HASH' or $type eq 'SCALAR') {
-            return $type;
-        }
-        else {
-            # we were passed an object, yuk.
-            # props to barrie slaymaker for the tip here... mine was much fuglier. ;-) 
-            if ( UNIVERSAL::isa( $wtf, "HASH" ) ) {
-                return 'HASH';
-            }
-            elsif ( UNIVERSAL::isa( $wtf, "ARRAY" ) ) {
-                return 'ARRAY';
-            }
-            elsif ( UNIVERSAL::isa( $wtf, "SCALAR" ) ) {
-                return 'SCALAR';
-            }
-            else {
-                return $type;
-            }
-        }
-
-    }
-    else {
-        if ( $wtf =~ /^(http|file|ftp|urn|shttp):/ ) {
-            #warn "type for $wtf is resource";
-            return 'resource';
-        }
-        else {
-            return 'literal';
-        }
-    }
-}
-
 sub tied_property_hash {
     my $self = shift;
     my $lookup_uri = shift;
+    my $options = shift;
     eval "require RDF::Helper::RDFRedland::TiedPropertyHash";
     
-    return RDF::Helper::RDFRedland::TiedPropertyHash->new( Helper => $self, ResourceURI => $lookup_uri );
+    return RDF::Helper::RDFRedland::TiedPropertyHash->new( Helper => $self, ResourceURI => $lookup_uri, Options => $options);
 
-}
-
-sub property_hash {
-    my $self = shift;
-    my $resource = shift;
-    my %found_data = ();
-    my %seen_keys = ();
-    
-    $resource ||= $self->new_bnode;
-    
-    foreach my $t ( $self->get_triples( $resource ) ) {
-
-        my $key = $self->resolved2prefixed( $t->[1] ) || $t->[1];
-
-        if ( $seen_keys{$key} ) {
-            if ( ref $found_data{$key} eq 'ARRAY' ) {
-                push @{$found_data{$key}}, $t->[2];
-            }
-            else {
-                my $was = $found_data{$key};
-                $found_data{$key} = [$was, $t->[2]];
-            }
-        }
-        else {
-            $found_data{$key} = $t->[2];
-        }
-        
-        $seen_keys{$key} = 1;
-        
-    }
-    
-    return \%found_data;
 }
 
 sub arrayref2rdf {
@@ -542,29 +506,17 @@ sub hashref2rdf {
                 $subject, $predicate, $$value
             );        
         }
+        elsif ( $type eq 'resource' ) {
+            $self->assert_resource(
+                $subject, $predicate, $value
+            );        
+        }
         else {
             $self->assert_literal(
                 $subject, $predicate, $value
             );
         }
     }
-}
-
-### XXX
-sub hashes_from_statement {
-    my $self = shift;
-    my ($s, $p, $o) = @_;
-    my @lookup_subjects = ();
-    my %found_data = ();
-    
-    foreach my $stmnt ( $self->get_statements( $s, $p, $o ) ) {
-        my $subj = $stmnt->subject;
-        my $key = $subj->is_resource ? $subj->uri->as_string : $subj->blank_identifier;
-        $found_data{$key} = $self->hash_from_resource( $subj );
-        
-    }
-    
-    return \%found_data;
 }
 
 sub hashlist_from_statement {
@@ -582,7 +534,7 @@ sub hashlist_from_statement {
     
     return @found_data;
 }
-#
+
 sub deep_prophash {
     my $self = shift;
     my $resource = shift;
@@ -662,345 +614,30 @@ sub get_object {
     return $obj;
 }
 
-package Dead;
-### XXX:
-
-
-sub execute_query {
-    my $self = shift;
-    my ($q) = @_;
-    return $self->query->query($q); 
-}
-
-
-sub query {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Query} = $new;
-        return 1;
-    }
-
-    unless (defined($self->{Query})) {
-        $self->{Query} = RDF::Core::Query->new(
-            Evaluator => $self->evaluator,
-        );
-    }
-    
-    return $self->{Query};
-}
-
-sub evaluator {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Evaluator} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Evaluator})) {
-        $self->{Evaluator} = RDF::Core::Evaluator->new(
-            Model => $self->{Model},
-            Factory => $self->{NodeFactory},
-            Functions => $self->function,
-            Namespaces => $self->{Namespaces},
-        );
-    }
-    
-    return $self->{Evaluator};
-}
-
-sub function {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Function} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Function})) {
-        $self->{Function} = RDF::Core::Function->new(
-            Data => $self->{Model},
-            Schema => $self->schema,
-            Factory => $self->{NodeFactory},
-        );
-    }
-    return $self->{Function};
-}
-
-sub schema {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Schema} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Schema})) {
-        $self->{Schema} = RDF::Core::Schema->new(
-            Storage => $self->{Model}->getOptions->{Storage},
-            Factory => $self->{NodeFactory},
-        );
-    }   
-    return $self->{Schema};
-}
-    
-
-sub node_factory {
-    my $self = shift;
-    my $new = shift;
-
-    if (defined($new)) {
-        $self->{NodeFactory} = $new;
-        return 1;
-    }
-
-    unless (defined($self->{NodeFactory})) {
-        $self->{NodeFactory} = RDF::Core::NodeFactory->new(BaseURI => $self->{BaseURI});
-    }
-    return $self->{NodeFactory};
-}
-
-sub get_uri {
-    my $self = shift;
-    my ($name, $suffix) = @_;
-
-    return $self->{Namespaces}->{$name} . $suffix;
-}
-
-sub ns {
-    my $self = shift;
-    my ($name, $uri) = @_;
-
-    if (defined($uri)) {
-        $self->{Namespaces}->{$name} = $uri;
-        return 1;
-    }
-
-    return $self->{Namespaces}->{$name};
-}
-
 1;
 
 __END__
 
 =head1 NAME
 
-RDF::Core::Helper - A wrapper around L<RDF::Core> to simplify RDF-related tasks
+RDF::Helper::RDFReland - RDF::Helper bridge for RDF::Redland
 
 =head1 SYNOPSIS
 
-  my $rdf = new RDF::Core::Helper(
-    Model => new RDF::Core::Model(
-      Storage => new RDF::Core::Storage::Postgres(
-        ConnectStr => 'dbi:Pg:dbname=rdf',
-        DBUser     => 'dbuser',
-        DBPassword => 'dbpassword',
-        Model      => 'rdf-model',
-      )
-    ),
+  my $model = RDF::Redland::Model->new( 
+      RDF::Redland::Storage->new( %storage_options )
+  );
+
+  my $rdf = RDF::Helper->new(
+    Namespaces => \%namespaces,
     BaseURI => 'http://domain/NS/2004/09/03-url#'
   );
 
 =head1 DESCRIPTION
 
-This module intends to simplify many of the methods and objects needed for interacting
-with an RDF datastore.  URI handling, resource creation, and node insertion/updating/deletion
-is all simplified in this object.  L<RDF::Core> itself, is quite simple, though it is due
-to this simplicity that one's code must be verbose in order to use it effectively.  To ease the
-process of using an RDF datastore, L<RDF::Core::Helper> simplifies the commonly-used
-methods for accessing RDF data.
+RDF::Helper::RDFRedland is the bridge class that connects RDF::Helper's facilites to RDF::Redland and should not be used directly. 
 
-=head2 CONSTRUCTOR
-
-  my $helper = new RDF::Core::Helper( Model => $model );
-
-Constructor; instantiates a new instance of the Helper class.  By
-supplying arguments to this constructor you can bind this instance
-to an existing RDF model and/or a "Node Factory".
-
-=head2 METHODS
-
-=over 4
-
-=item blank_node
-
-  my $new_node = $helper->blank_node;
-
-Creates and returns a new node that can be used to create and add
-new resources.
-
-=item get_triples
-
-  my $node_array = $helper->get_triples($subject, $predicate, $object);
-
-Retrieves triples from the datastore based on the values supplied
-(similar to L</get_statements>), except the statement's individual
-elements - the subject, predicate and object - are expanded into an
-array reference.
-
-=item get_statements
-
-  my $stmt_array = $helper->get_statements($subject, $predicate, $object);
-  foreach (@$stmt_array) {
-    # Magic happens here
-  }
-
-Returns an array representation of the enumerator returned by
-L</get_enumerator>.
-
-=item new_resource
-
-  my $resource = $helper->new_resource("urn:root:name");
-
-Creates and returns a new resource based on the supplied value.  This
-is mainly useful for calling the various L<RDF::Core> methods that
-require a properly-formed object be supplied.
-
-=item new_literal
-
-  my $literal = $helper->new_literal("RDF Rocks");
-
-Creates and returns a new literal based on the supplied value.  This
-is mainly useful for calling the various L<RDF::Core> methods that
-require a properly-formed object be supplied.
-
-=item get_enumerator
-
-  my $enum = $helper->get_enumerator($subject, $predicate, $object);
-
-Retrieves statements from the datastore based on the values supplied.
-Each value could be either a proper L<RDF::Core> object, a URI, or
-C<undef>.  Whatever the values are however, they are automatically
-converted to L<RDF::Core::Resource> or L<RDF::Core::Literal> objects.
-
-This method is used by several of the other L<RDF::Core::Helper>
-methods, and is thus built to be generic.
-
-=item remove_statements
-
-  my $count = $helper->remove_statements($subject, $predicate, $object);
-
-Removes statements from the datastore that match the supplied
-triple.  The number of statements removed is returned.
-
-=item assert_literal
-
-  $helper->assert_literal($subject, $predicate, $literal);
-
-Asserts the supplied statement into the datastore as a literal value.
-
-=item update_literal
-
-  $helper->update_literal($subject, $predicate, $old_literal, $new_literal);
-
-Changes the value of the literal identified by the supplied
-statement.  This is achieved by first removing the old statement, and
-then asserting the statement with the new literal.
-
-=item assert_resource
-
-  $helper->assert_resource($subject, $predicate, $resource);
-
-Asserts the supplied statement into the datastore as a resource.
-
-=item update_resource
-
-  $helper->update_resource($subject, $predicate, $old_resource, $new_resource);
-
-Changes the resource identified by the supplied statement.  This is
-similar in functionality to L</update_literal>.
-
-=item include_model
-
-  $helper->include_model($model);
-
-This method can be used to merge multiple models into one.  If an
-additional model is created as a L<RDF::Core::Model> object, it's
-statements can be extracted and added to the model the current Helper
-object encapsulates.
-
-=item include_rdfxml
-
-  $helper->include_rdfxml(filename => $file);
-  $helper->include_rdfxml(xml => $xml_string);
-
-Includes the RDF statements present in the given file or XML string
-into the current RDF model.
-
-=item serialize_model
-
-  my $xml_string = $helper->serialize_model();
-
-Serializes the RDF model as XML, and returns it as a string.
-
-=item count
-
-  my $num_stmts = $helper->count($subject, $predicate, $object);
-
-Returns the number of statements currently stored in the RDF model
-that match the given statement.
-
-=item exists
-
-  if ($helper->exists($subject, $predicate, $object)) {
-    # Magic happens here
-  }
-
-Returns a boolean value indicating if any statements matching the
-given values exist in the RDF model.
-
-=item get_uri
-
-  my $uri = $helper->get_uri('rdf', 'type');
-  # Returns "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-  $helper->assert('urn:subject', $uri, $classType);
-
-This helper method makes creating predicate and other URIs easier.
-Instead of having to copy-and-paste the same namespace URI when
-asserting statements, this can let you combine the namespace prefix
-with the predicate type to create a fully-formed URI.
-
-There are other methods for doing this though, using constants to
-define both the namespace and specific predicate URIs.  TIMTOWTDI.
-
-=item model
-
-  my $model = $helper->model;
-  $helper->model($new_model);
-
-Accessor method providing access to the internal RDF model object.
-This can be used to change which model this helper object uses.
-
-=item node_factory
-
-  my $node_factory = $helper->node_factory;
-  $helper->node_factory($new_node_factory);
-
-Accessor method providing access to the internal RDF node factory
-object.  This can be used to change the factory this helper object
-uses.
-
-=item ns
-
-  $helper->ns('foaf', 'http://xmlns.com/foaf/0.1/');
-  my $rdf_ns = $helper->ns('rdf');
-  # Returns "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-
-Accessor method providing access to the internal Namespaces hash.
-The L</constructor> allows you to supply as many namespace prefix to
-URI definitions, but it may sometimes be necessary to change this
-after the fact.
-
-By invoking this method with two arguments, it sets a new or updates
-a current namespace prefix with a URI.  If supplied with only one
-argument, it will return the URI for that namespace prefix if available.
-
-=back
+See L<RDF::Helper> for method documentation
 
 =head1 AUTHOR
 
@@ -1017,6 +654,6 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<RDF::Core>.
+L<RDF::Helper> L<RDF::Redland>.
 
 =cut

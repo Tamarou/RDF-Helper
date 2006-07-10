@@ -1,8 +1,10 @@
-package RDF::Helper::RDFRedland::Query;
+package RDF::Helper::RDFQuery;
 use strict;
 use warnings;
 use vars qw( @ISA );
-@ISA = qw( RDF::Redland::Query );
+use RDF::Query;
+#$RDF::Query::debug = 1;
+@ISA = qw( RDF::Query );
 
 
 sub new {
@@ -64,66 +66,3 @@ sub selectrow_arrayref {
     $self->{_RESULTS_}->next_result;
     return $found_data;
 }
-
-__END__
-
-=head1 NAME
-
-RDF::Helper::RDFReland::Query - Perlish convenience extension for RDF::Redland::Query
-
-=head1 SYNOPSIS
-
-  my $model = RDF::Redland::Model->new( 
-      RDF::Redland::Storage->new( %storage_options )
-  );
-
-  my $rdf = RDF::Helper->new(
-    Namespaces => \%namespaces,
-    BaseURI => 'http://domain/NS/2004/09/03-url#'
-  );
-  
-  my $q_obj = $rdf->new_query( $sparql_text, 'sparql' );
-  
-  # arrays
-  while ( my $row = $q_obj->selectrow_arrayref ) {
-      # $row is an array reference.
-  }
-
-  # hashes
-  while ( my $row = $q_obj->selectrow_hashref ) {
-      # $row is a hash reference.
-  }
-
-=head1 DESCRIPTION
-
-RDF::Helper::RDFRedland::Query is the object retuned from RDF::Helper's new_query() method when using RDF::Redland as the base interface class. This object provides everything that an instance of RDF::Redland::Query offers, plus the convenience methods  detailed below.
-
-=head1 METHODS
-
-=head2 selectrow_arrayref
-
-Returns each row as a Perl array references. The order of the array's indices will correspond to the order of the variable bindings in the query.
-
-=head2 selectrow_hashref
-
-Returns each row as a Perl hash references. The keys in the hash will have the same names as the variable bindings in the query.
-
-=head1 AUTHOR
-
-Kip Hampton, khampton@totalcinema.com
-
-=head1 COPYRIGHT
-
-Copyright (c) 2004 Kip Hampton.  All rights reserved.
-
-=head1 LICENSE
-
-This module is free sofrware; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
-=head1 SEE ALSO
-
-L<RDF::Helper> L<RDF::Redland::Query>.
-
-=cut
-

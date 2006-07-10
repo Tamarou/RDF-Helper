@@ -13,6 +13,30 @@ use overload
 # TODO:
 # - Handle namespaces properly
 
+=head1 NAME
+
+RDF::Helper::Object - Perl extension for blah blah blah
+
+=head1 SYNOPSIS
+
+  use RDF::Helper;
+  my $rdf = RDF::Helper->new(
+      BaseInterface => 'RDF::Redland',
+      Namespaces => { 
+        dc => 'http://purl.org/dc/elements/1.1/',
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        '#default' => "http://purl.org/rss/1.0/"
+     }
+  );
+  my $obj = $rdf->get_object('http://use.perl.org/');
+  $obj->rdf_type("http://purl.org/rss/1.0/channel");
+  $obj->title("RSS Channel");
+  $obj->description("The description of this RSS feed");
+
+=head1 DESCRIPTION
+
+=cut
+
 sub new {
     my $proto = shift;
     my %args;
@@ -39,8 +63,12 @@ sub new {
         $self->{_tied_} = 0;
     }
     else {
+        unless (defined( $args{TiedHashOptions} )) {
+            $args{TiedHashOptions}->{Deep} = 1;
+        }
         $self->{_data_} = $self->{_datastore_}->tied_property_hash(
-                            $self->{_uri_} 
+                            $self->{_uri_},
+                            $args{TiedHashOptions}
                           );
         $self->{_tied_} = 1;
     }

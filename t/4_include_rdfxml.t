@@ -12,7 +12,7 @@ my $xml_string = undef;
 }
 
 SKIP: {
-  eval { require RDF::CoreXXX };
+  eval { require RDF::Core };
   skip "RDF::Core not installed", 11 if $@;
 
   my $rdf = RDF::Helper->new(

@@ -4,6 +4,44 @@ use warnings;
 use Data::Dumper;
 
 
+sub get_perl_type {
+    my $self = shift;
+    my $wtf = shift;
+
+    my $type = ref( $wtf );
+    if ( $type ) {
+        if ( $type eq 'ARRAY' or $type eq 'HASH' or $type eq 'SCALAR') {
+            return $type;
+        }
+        else {
+            # we were passed an object, yuk.
+            # props to barrie slaymaker for the tip here... mine was much fuglier. ;-) 
+            if ( UNIVERSAL::isa( $wtf, "HASH" ) ) {
+                return 'HASH';
+            }
+            elsif ( UNIVERSAL::isa( $wtf, "ARRAY" ) ) {
+                return 'ARRAY';
+            }
+            elsif ( UNIVERSAL::isa( $wtf, "SCALAR" ) ) {
+                return 'SCALAR';
+            }
+            else {
+                return $type;
+            }
+        }
+
+    }
+    else {
+        if ( $wtf =~ /^(http|file|ftp|urn|shttp):/ ) {
+            #warn "type for $wtf is resource";
+            return 'resource';
+        }
+        else {
+            return 'literal';
+        }
+    }
+}
+
 
 sub resourcelist_from_property {
     my %args = @_;
@@ -57,7 +95,7 @@ sub qname2resolved {
     my $lookup = shift;
     
     my ( $prefix, $name ) = $lookup =~ /^([^:]+):(.+)$/;
-    return $lookup unless (exists($self->{Namespaces}->{$prefix}));
+    return $lookup unless ( defined $prefix and exists($self->{Namespaces}->{$prefix}));
     return $self->{Namespaces}->{$prefix} . $name;
 }
 

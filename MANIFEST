@@ -4,6 +4,7 @@ lib/RDF/Helper/Constants.pm
 lib/RDF/Helper/Object.pm
 lib/RDF/Helper/PerlConvenience.pm
 lib/RDF/Helper/RDFCore.pm
+lib/RDF/Helper/RDFQuery.pm
 lib/RDF/Helper/RDFRedland.pm
 lib/RDF/Helper/RDFRedland/Query.pm
 lib/RDF/Helper/RDFRedland/TiedPropertyHash.pm
@@ -21,4 +22,5 @@ t/5_rdf2perl.t
 t/6_query_perl.t
 t/7_property_hash.t
 t/8_rdf_object.t
+t/9_pod.t
 t/data/use.perl.rss

@@ -1,4 +1,4 @@
-use Test::More tests => 19;
+use Test::More tests => 22;
 
 use RDF::Helper;
 use RDF::Helper::RDFRedland::TiedPropertyHash;
@@ -9,8 +9,12 @@ use Data::Dumper;
 
 
 SKIP: {
-  eval { require RDF::CoreXXX };
-  skip "RDF::Core not installed", 1 if $@;
+  eval { require RDF::Core };
+  skip "RDF::Core not installed", 0 if $@;
+  
+  TODO: {
+    local $TODO = 'Tied Property haseh not yet implemented';
+  }
   
 }
 
@@ -19,7 +23,7 @@ SKIP: {
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Redland };
-  skip "RDF::Redland not installed", 4 if $@;
+  skip "RDF::Redland not installed", 22 if $@;
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Redland',
@@ -76,14 +80,37 @@ SKIP: {
   my ($link_res_2) = $rdf->get_statements('urn:x-test:1', 'http://purl.org/rss/1.0/link', undef);
   ok($link_res_2->object->is_resource, 'Set an arrayref that looks like a URI encodes it as a resource');
 
-  my %useperl;
-  tie %useperl, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'http://use.perl.org/'; 
-  is( $useperl{title}, 'use Perl', 'Get existing RSS property "title"' );
-  is( $useperl{'dc:language'}, 'en-us', 'Get existing RSS property "dc:language"' );
+  my %useperl1;
+  tie %useperl1, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'http://use.perl.org/'; 
+  is( $useperl1{title}, 'use Perl', 'Get existing RSS property "title"' );
+  is( $useperl1{'dc:language'}, 'en-us', 'Get existing RSS property "dc:language"' );
 
-  is( ref($useperl{'image'}), 'HASH', 'Resource node returns a hash reference' );
-  is( $useperl{'image'}->{url}, 'http://use.perl.org/images/topics/useperl.gif', 'Traverse resource node to image -> url property' );
+  ok( !ref($useperl1{'image'}), 'Resource node does not return a reference' );
+  is( $useperl1{'image'}, 'http://use.perl.org/images/topics/useperl.gif', 'Resource node returns a plain value' );
 
+  my %useperl2;
+  tie %useperl2, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'http://use.perl.org/', { Deep => 1 }; 
+  is( $useperl2{title}, 'use Perl', 'Got title for deep-tied hash' );
+
+  is( ref($useperl2{'image'}), 'HASH', 'Deep-tied resource node returns a hash reference' );
+  is( $useperl2{'image'}->{url}, 'http://use.perl.org/images/topics/useperl.gif', 'Traverse deep-tied resource node to image -> url property' );
+
+  my $in_memory = RDF::Helper->new(
+      BaseInterface => 'RDF::Redland',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      Namespaces => { 
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        dc => 'http://purl.org/dc/elements/1.1/',
+     },
+  );
+  
+  my %dummy = ();
+  tie %dummy, RDF::Helper::RDFRedland::TiedPropertyHash, $in_memory, 'http://totalcinema.com/'; 
+  
+  $dummy{'dc:creator'} = [ 'mike', 'kip', 'kjetil' ];
+  
+  my $creators = $dummy{'dc:creator'};
+  ok( ref( $creators ) eq 'ARRAY' and scalar @{$creators} == 3 );
   #%hash = ();
 #   foreach my $t ( $rdf->get_triples( 'http://use.perl.org/', 'http://purl.org/dc/elements/1.1/norkle') ) {
 #       warn Dumper( $t );

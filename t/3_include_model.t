@@ -13,7 +13,7 @@ use constant URI2 => 'http://example.org/two';
 # RDF::Core
 #----------------------------------------------------------------------
 SKIP: {
-  eval { require RDF::CoreXXX };
+  eval { require RDF::Core };
   skip "RDF::Core not installed", 5 if $@;
 
   my $rdf1 = RDF::Helper->new(

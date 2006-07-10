@@ -1,4 +1,4 @@
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 use RDF::Helper;
 use Data::Dumper;
@@ -9,7 +9,7 @@ use Data::Dumper;
 
 SKIP: {
   eval { require RDF::CoreXXX };
-  skip "RDF::Core not installed", 5 if $@;
+  skip "RDF::Core Query facilites lacking", 5 if $@;
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Core',
@@ -158,8 +158,8 @@ SKIP: {
       PREFIX dc: <http://purl.org/dc/elements/1.1/>
       SELECT ?creator ?date ?subject
       WHERE  {
-          ?s dc:subject ?subject
-          ?s dc:creator ?creator
+          ?s dc:subject ?subject .
+          ?s dc:creator ?creator .
           ?s dc:date ?date
       }
   |;
@@ -175,4 +175,24 @@ SKIP: {
       }
   }
   ok( $hash_count == $result2_count, 'sparql query returned the expected number of results' );
+  
+    SKIP: {
+        eval { require RDF::Query };
+        skip "RDF::Query not installed", 1 if $@;
+        
+        $rdf->query_interface('RDF::Helper::RDFQuery');
+    
+      
+        my $result3_count = 0;
+        my $q_obj3 = $rdf->new_query( $query2, 'sparql' );
+        while ( my $item = $q_obj3->selectrow_hashref ) {
+            #warn Dumper( $item );
+            if ( defined $item->{creator} and 
+                 defined $item->{subject} and
+                 defined $item->{date} ) {
+                 $result3_count++;
+            }
+        }
+        ok( $hash_count == $result3_count, 'RDF::Query sparql query returned the expected number of results' );
+    }
 }

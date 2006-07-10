@@ -1,4 +1,4 @@
-use Test::More tests => 27;
+use Test::More tests => 29;
 
 use RDF::Helper;
 use RDF::Helper::Object;
@@ -32,6 +32,8 @@ SKIP: {
         taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
         syn => "http://purl.org/rss/1.0/modules/syndication/",
         admin => "http://webns.net/mvcb/",
+        contact => "http://www.w3.org/2000/10/swap/pim/contact#",
+        air => "http://www.daml.org/2001/10/html/airport-ont#",
      },
   );
   $rdf->include_rdfxml(filename => 't/data/use.perl.rss');
@@ -60,6 +62,8 @@ SKIP: {
   is( join(',', sort($obj1->dc_language)), join(',', sort(qw( en-gb jp fr ))), 'proper languages returned - array' );
   ok( $obj1->dc_language([qw( en-gb fr )]), 'remove value from multiple language set' );
   is( join(',', sort($obj1->dc_language)), join(',', sort(qw( en-gb fr ))), 'proper languages returned - array' );
+  is( $obj1->dc_author->dc_fullname, 'Mike Nachbaur', 'Traverse 2 object levels');
+  is( $obj1->dc_author->contact_nearestAirport->air_iata, 'YHW', 'Traverse 3 object levels');
 
   $obj1->link('http://www.google.com/');
   my ($link_res) = $rdf->get_statements('http://use.perl.org/', 'http://purl.org/rss/1.0/link', undef);
@@ -70,6 +74,11 @@ SKIP: {
   is( $obj1->image->object_uri, "http://use.perl.org/images/topics/useperl.gif", 'image property blessed object URI' );
   is( $obj1->image->link, "http://use.perl.org/", 'image property traversed blessed object property' );
   is( ref($obj1->items), "RDF::Helper::Object", 'items property blessed blank node' );
+  
+  my $seq =  $obj1->items;
+  
+  my @items = $seq->rdf_li;
+  warn "ITEMS " . Dumper( \@items );
 
   my $obj2 = $rdf->get_object('http://use.perl.org/');
   ok(UNIVERSAL::isa($obj2, 'RDF::Helper::Object'), 'object via get_object() isa RDF::Helper::Object');

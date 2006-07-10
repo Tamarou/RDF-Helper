@@ -23,7 +23,8 @@ sub new {
     tie %data, 
         'RDF::Helper::RDFRedland::TiedPropertyHash', 
         $args{Helper}, 
-        $args{ResourceURI};
+        $args{ResourceURI},
+        $args{Options};
     return \%data;
 }
 
@@ -36,7 +37,10 @@ sub new {
 
 sub TIEHASH {
     my $class = shift;
-    my ( $helper, $lookup_uri ) = @_;
+    my ( $helper, $lookup_uri, $options ) = @_;
+    $options ||= {
+        Deep => 0
+    };
     my $data = {};
     
     unless ( defined $helper ) {
@@ -53,7 +57,7 @@ sub TIEHASH {
     else {
         $lookup_uri = $helper->new_bnode;
     }
-    bless [$data, $helper, $lookup_uri], $class;
+    bless [$data, $helper, $lookup_uri, $options], $class;
 }
 
 sub DELETE {
@@ -96,7 +100,7 @@ sub FETCH {
             my $val = $self->_node_value($obj);
 
             # If it's a resource, make it an object
-            if ($obj->is_resource or $obj->is_blank) {
+            if ($self->[3]->{Deep} and ($obj->is_resource or $obj->is_blank)) {
                 $val = $self->[1]->tied_property_hash( $val );
             }
             push @results, $val;

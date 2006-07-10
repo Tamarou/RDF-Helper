@@ -8,6 +8,8 @@
  xmlns:dc="http://purl.org/dc/elements/1.1/"
  xmlns:syn="http://purl.org/rss/1.0/modules/syndication/"
  xmlns:admin="http://webns.net/mvcb/"
+ xmlns:contact="http://www.w3.org/2000/10/swap/pim/contact#" 
+ xmlns:air="http://www.daml.org/2001/10/html/airport-ont#" 
 >
 
 <channel rdf:about="http://use.perl.org/">
@@ -26,6 +28,7 @@ owners.</dc:rights>
 <syn:updatePeriod>hourly</syn:updatePeriod>
 <syn:updateFrequency>1</syn:updateFrequency>
 <syn:updateBase>1970-01-01T00:00+00:00</syn:updateBase>
+<dc:author rdf:resource="#Nacho"/>
 <items>
  <rdf:Seq>
   <rdf:li 
@@ -91,6 +94,17 @@ rdf:resource="http://use.perl.org/article.pl?sid=04/11/30/1125252&amp;from=rss" 
 <url>http://use.perl.org/images/topics/useperl.gif</url>
 <link>http://use.perl.org/</link>
 </image>
+
+<dc:Person rdf:about="#Nacho">
+    <dc:firstname>Mike</dc:firstname>
+    <dc:sirname>Nachbaur</dc:sirname>
+    <dc:fullname>Mike Nachbaur</dc:fullname>
+    <contact:nearestAirport rdf:resource="http://www.daml.org/cgi-bin/airport?YHW"/>
+</dc:Person>
+
+<air:Airport rdf:about="http://www.daml.org/cgi-bin/airport?YHW">
+    <air:iata>YHW</air:iata>
+</air:Airport>
 
 <item rdf:about="http://use.perl.org/article.pl?sid=05/04/02/2135258&amp;from=rss">
 <title>Perl 5.9.2 released</title>

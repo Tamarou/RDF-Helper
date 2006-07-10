@@ -11,7 +11,7 @@ use constant XSD_INT => 'http://www.w3.org/2001/XMLSchema#int';
 # RDF::Core
 #----------------------------------------------------------------------
 SKIP: {
-  eval { require RDF::CoreXXX };
+  eval { require RDF::Core };
   skip "RDF::Core not installed", 5 if $@;
 
   my $rdf = RDF::Helper->new(
@@ -49,9 +49,6 @@ SKIP: {
   my $typed = $rdf->new_literal('15', undef, XSD_INT);
   my $langed = $rdf->new_literal('Speek Amurrican', 'en-US');
 
-  SKIP: {
-      skip "Datatypes not working properly", 1;
-      ok($typed->literal_datatype eq XSD_INT);
-  }
+  ok($typed->literal_datatype->as_string eq XSD_INT);
   ok($langed->literal_value_language eq 'en-US');
 }

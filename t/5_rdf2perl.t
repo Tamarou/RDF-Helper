@@ -7,11 +7,11 @@ use Data::Dumper;
 #----------------------------------------------------------------------
 
 SKIP: {
-  eval { require RDF::CoreXXX };
+  eval { require RDF::Core };
   skip "RDF::Core not installed", 2 if $@;
 
   my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Redland',
+      BaseInterface => 'RDF::Core',
       BaseURI => 'http://totalcinema.com/NS/test#',
       Namespaces => { 
         dc => 'http://purl.org/dc/elements/1.1/',
@@ -26,8 +26,8 @@ SKIP: {
 
   $rdf->include_rdfxml(filename => 't/data/use.perl.rss');
   
-  my $ref = $rdf->hash_from_resource('http://use.perl.org/');
-  
+  my $ref = $rdf->deep_prophash('http://use.perl.org/');
+  #warn Dumper( $ref );
   ok( scalar keys %{$ref} > 0 );
   
   my $hash_count = scalar keys %{$ref->{items}};
@@ -92,7 +92,7 @@ SKIP: {
   );
   
   $rdf2->hashref2rdf( \%data );
-  warn $rdf2->serialize( filename => 'dump.rdf' );
+  #warn $rdf2->serialize( filename => 'dump.rdf' );
 
   #warn $rdf2->serialize( format => 'rdfxml-abbrev' );
 }
