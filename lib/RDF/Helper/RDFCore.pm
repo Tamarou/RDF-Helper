@@ -15,6 +15,7 @@ use RDF::Core::Evaluator;
 use RDF::Core::Query;
 use RDF::Core::Schema;
 use RDF::Helper::PerlConvenience;
+use Data::Dumper;
 use Cwd;
 use vars qw( @ISA );
 @ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
@@ -53,56 +54,19 @@ sub new {
     return bless \%args, $class;
 }
 
-sub get_triples {
+sub new_native_bnode {
     my $self = shift;
-    my @ret_array = ();
-    
-    foreach my $stmnt ($self->get_statements(@_)) {
-        my $obj_value;
-        my $obj = $stmnt->getObject;
-        
-        if ($obj->isa('RDF::Core::Literal')) {
-            $obj_value = $obj->getValue;
-        }
-        else {
-            $obj_value = $obj->getURI;
-        }
-        
-        push @ret_array, [ $stmnt->getSubject->getURI,
-                           $stmnt->getPredicate->getURI,
-                           $obj_value ];
-    }
-    
-    return @ret_array;
-}
-    
-sub get_statements {
-    my $self = shift;
-    my @ret_array = ();
-
-    my $enum = $self->get_enumerator(@_);
-    my $stmt = $enum->getFirst;
-  
-    while ( defined($stmt)) {
-        push @ret_array, $stmt;
-        $stmt = $enum->getNext;
-    }
-    
-    return @ret_array;
+    my $id = shift;
+    return $self->{NodeFactory}->newResource($id);
 }
 
-sub new_bnode {
-    my $self = shift;
-    return $self->{NodeFactory}->newResource;
-}
-
-sub new_resource {
+sub new_native_resource {
     my $self = shift;
     my $val = shift;
     return RDF::Core::Resource->new($val);
 }
 
-sub new_literal {
+sub new_native_literal {
     my $self = shift;
     my ($val, $lang, $type) = @_;
     return RDF::Core::Literal->new($val, $lang, $type);
@@ -113,44 +77,53 @@ sub get_enumerator {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my ($subj, $pred, $obj) = (undef, undef, undef);
+    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, $o );
 
-    if (defined($s)) {
-       $subj = ref($s) ? $s : RDF::Core::Resource->new( $self->{ExpandQNames} ? $self->qname2resolved($s) : $s);
-    }    
-    if (defined($p)) {
-        $pred = ref($p) ? $p : RDF::Core::Resource->new( $self->{ExpandQNames} ? $self->qname2resolved($p) : $p);
-    }    
-    if (defined($o)) {
-        if ( ref( $o ) ) {
-            $obj = $o;
-        }
-        else {
-            my $testval = $self->{ExpandQNames} ? $self->qname2resolved($o) : $o;
-            my $type = $self->get_perl_type( $testval );
-            if ( $type eq 'resource' ) {
-                $obj = RDF::Core::Resource->new( $testval);
-            }
-            else {
-                $obj  = RDF::Core::Literal->new("$testval");
-            }
-        }
-    }
+    my @nodes = map { $self->helper2native($_) } ( $subj, $pred, $obj );
 
-    return $self->{Model}->getStmts($subj, $pred, $obj);
+    return RDF::Helper::RDFCore::Enumerator->new(
+        statement => RDF::Core::Statement->new(@nodes),
+        model => $self->model,
+    );
 }
 ##
+
+sub helper2native {
+    my $self = shift;
+    my $in = shift;
+    
+    return undef unless $in;
+    
+    my $out = undef;
+    if ( $in->is_resource ) {
+        $out = $self->new_native_resource( $in->uri->as_string );
+    }
+    elsif ( $in->is_blank ) {
+        $out = $self->new_native_bnode( $in->blank_identifier );
+    }
+    else {
+        my $type_uri = undef;
+        if ( my $uri = $in->literal_datatype ) {
+            $type_uri = $uri->as_string;
+        }
+        $out = $self->new_native_literal( $in->literal_value, $in->literal_value_language, $type_uri
+        );    
+    }
+    return $out;
+}
 
 sub remove_statements {
     my $self = shift;
 
     my $del_count = 0;
-    my $enum = $self->get_enumerator(@_);
-    my $stmt = $enum->getFirst;
-  
-    while ( defined($stmt)) {
-        $self->{Model}->removeStmt($stmt);
-        $stmt = $enum->getNext;
+
+    my $e = $self->get_enumerator(@_);
+    while( my $s = $e->next ) {    
+        my @nodes = ();
+        foreach my $type qw( subject predicate object ) {
+            push @nodes, $self->helper2native( $s->$type );
+        }
+        $self->{Model}->removeStmt( RDF::Core::Statement->new(@nodes) );
         $del_count++;
     }
 
@@ -161,43 +134,32 @@ sub assert_literal {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my $subj = ref($s) ? $s : RDF::Core::Resource->new($s);
-    my $pred = ref($p) ? $p : $subj->new($p);
-    my $obj  = ref($o) ? $o : RDF::Core::Literal->new($o);
+    my $subj = ref($s) ? $s->isa('RDF::Helper::Node') ? $self->helper2native( $s ) : $s : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($s) : $s);
+    
+    my $pred = ref($p) ? $p->isa('RDF::Helper::Node') ? $self->helper2native( $p ) : $p : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($p) : $p);
+    
+    my $obj  = ref($o) ? $o->isa('RDF::Helper::Node') ? $self->helper2native( $o ) : $o : $self->new_native_literal("$o");
+
+    #warn Dumper( $subj, $pred, $obj );
     $self->{Model}->addStmt(
         RDF::Core::Statement->new($subj, $pred, $obj)
     );
-}
-
-sub update_literal {
-    my $self = shift;
-    my ($s, $p, $o, $new) = @_;
-
-    my $count = $self->remove_statements($s, $p, $o);
-    warn "More than one resource removed.\n" if $count > 1;
-    return $self->assert_literal($s, $p, $new);
 }
 
 sub assert_resource {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my $subj = ref($s) ? $s : RDF::Core::Resource->new($s);
-    my $pred = ref($p) ? $p : $subj->new($p);
-    my $obj  = ref($o) ? $o : RDF::Core::Resource->new($o);
+    my $subj = ref($s) ? $s->isa('RDF::Helper::Node') ? $self->helper2native( $s ) : $s : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($s) : $s);
+    
+    my $pred = ref($p) ? $p->isa('RDF::Helper::Node') ? $self->helper2native( $p ) : $p : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($p) : $p);
+    
+    my $obj = ref($o) ? $o->isa('RDF::Helper::Node') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($o) : $o);
 
+    #warn Dumper( $subj, $pred, $obj );
     $self->{Model}->addStmt(
         RDF::Core::Statement->new($subj, $pred, $obj)
     );
-}
-
-sub update_resource {
-    my $self = shift;
-    my ($s, $p, $o, $new) = @_;
-
-    my $count = $self->remove_statements($s, $p, $o);
-    warn "More than one resource removed.\n" if $count > 1;
-    return $self->assert_resource($s, $p, $new);
 }
 
 #---------------------------------------------------------------------
@@ -260,19 +222,12 @@ sub count {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my ($subj, $pred, $obj) = (undef, undef, undef);
+    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, $o );
 
-    if (defined($s)) {
-       $subj = ref($s) ? $s : RDF::Core::Resource->new($s);
-    }    
-    if (defined($p)) {
-        $pred = ref($p) ? $p : RDF::Core::Resource->new($p);
-    }    
-    if (defined($o)) {
-        $obj  = ref($o) ? $o : RDF::Core::Literal->new($o);
-    }
+    my @nodes = map { $self->helper2native($_) } ( $subj, $pred, $obj );
 
-    return $self->{Model}->countStmts($subj, $pred, $obj);
+    #warn "TESTING: " . Dumper( $subj, $pred, $obj );
+    return $self->{Model}->countStmts(@nodes);
 }
 
 sub execute_query {
@@ -281,134 +236,6 @@ sub execute_query {
     return $self->query->query($q); 
 }
 
-sub deep_prophash {
-    my $self = shift;
-    my $resource = shift;
-    my %found_data = ();
-    my %seen_keys = ();
-    
-    foreach my $stmnt ( 
-$self->get_statements($resource, undef, undef)) {
-        my $pred = $stmnt->getPredicate->getLabel,
-        my $obj  = $stmnt->getObject;
-        my $value;
-        
-        if ( $obj->isLiteral ) {
-            $value = $obj->getLabel;
-        }
-        else {
-            # if nothing else in the model points to this resource
-            # just give the URI as a literal string
-            if ( $self->count( $obj, undef, undef) == 0 ) {
-                $value = $obj->getLabel;
-            }
-            # otherwise, recurse
-            else {
-                $value = $self->deep_prophash( $obj );
-            }
-
-        }
-
-        my $key = $self->resolved2prefixed( $pred ) || $pred;
-        
-        if ( $seen_keys{$key} ) {
-            if ( ref $found_data{$key} eq 'ARRAY' ) {
-                push @{$found_data{$key}}, $value;
-            }
-            else {
-                my $was = $found_data{$key};
-                $found_data{$key} = [$was, $value];
-            }
-        }
-        else {
-            $found_data{$key} = $value;
-        }
-        
-        $seen_keys{$key} = 1;
-        
-    }
-    
-    return \%found_data;
-}
-
-#---------------------------------------------------------------------
-# Sub-object Accessors
-#---------------------------------------------------------------------
-sub query {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Query} = $new;
-        return 1;
-    }
-
-    unless (defined($self->{Query})) {
-        $self->{Query} = RDF::Core::Query->new(
-            Evaluator => $self->evaluator,
-        );
-    }
-    
-    return $self->{Query};
-}
-
-sub evaluator {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Evaluator} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Evaluator})) {
-        $self->{Evaluator} = RDF::Core::Evaluator->new(
-            Model => $self->{Model},
-            Factory => $self->{NodeFactory},
-            Functions => $self->function,
-            Namespaces => $self->{Namespaces},
-        );
-    }
-    
-    return $self->{Evaluator};
-}
-
-sub function {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Function} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Function})) {
-        $self->{Function} = RDF::Core::Function->new(
-            Data => $self->{Model},
-            Schema => $self->schema,
-            Factory => $self->{NodeFactory},
-        );
-    }
-    return $self->{Function};
-}
-
-sub schema {
-    my $self = shift;
-    my $new = shift;
-    
-    if (defined($new)) {
-        $self->{Schema} = $new;
-        return 1;
-    }
-    
-    unless (defined($self->{Schema})) {
-        $self->{Schema} = RDF::Core::Schema->new(
-            Storage => $self->{Model}->getOptions->{Storage},
-            Factory => $self->{NodeFactory},
-        );
-    }   
-    return $self->{Schema};
-}
     
 sub model {
     my $self = shift;
@@ -457,6 +284,79 @@ sub ns {
     }
 
     return $self->{Namespaces}->{$name};
+}
+
+#---------------------------------------------------------------------
+# Redland-specific enumerator
+#---------------------------------------------------------------------
+
+package RDF::Helper::RDFCore::Enumerator;
+use strict;
+use warnings;
+use RDF::Helper::Statement;
+use Data::Dumper;
+
+sub new {
+    my $proto = shift;
+    my %args = @_;
+    my $class = ref($proto) || $proto;
+    die "Not enough args" unless $args{model};
+    my $statement = delete $args{statement};
+    
+    #warn "ENUM" . Dumper( $statement );
+    
+    my @nodes = ();
+    if (defined( $statement )) {
+        foreach my $type qw( getSubject getPredicate getObject ) {
+            push @nodes, $statement->$type;
+        }
+    }
+    my $self = bless \%args, $class;
+    $self->{stream} = $self->{model}->getStmts( @nodes );
+    $self->{first_statement} = $self->{stream}->getFirst;
+    return $self;
+}
+
+sub next {
+    my $self = shift;
+    my $in = undef;
+    if ( defined $self->{stream} ) {
+        if ( exists( $self->{first_statement} )) {
+            $in = delete $self->{first_statement};
+        }
+        else {
+            $in = $self->{stream}->getNext;
+        }
+    }
+
+    unless ( $in ) {
+        delete $self->{stream};
+        return undef;
+    }
+
+    my $s = undef;
+    my @nodes = ();
+    foreach my $type qw( getSubject getPredicate getObject ) {
+        push @nodes, process_node( $in->$type );
+    }
+    return RDF::Helper::Statement->new( @nodes )
+}
+
+sub process_node {
+    my $in = shift;
+    
+    my $out = undef;
+    if ( $in->isLiteral ) {
+        $out = RDF::Helper::Node::Literal->new(
+            value => $in->getValue,
+            language => $in->getLang,
+            datatype => $in->getDatatype,
+        );
+    }
+    else {
+        $out = RDF::Helper::Node::Resource->new( uri => $in->getURI );
+    }
+    return $out;
 }
 
 1;

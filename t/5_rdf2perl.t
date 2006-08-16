@@ -65,7 +65,7 @@ SKIP: {
   ok( scalar keys %{$ref} > 0 );
   
   my $hash_count = scalar keys %{$ref->{items}};
-  #warn Dumper( $ref->{items} );
+  #warn Dumper( $ref );
 
   ok ( $hash_count > 0 );
   

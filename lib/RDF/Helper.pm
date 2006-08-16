@@ -1,8 +1,10 @@
 package RDF::Helper;
 use strict;
 use warnings;
+use RDF::Helper::Statement;
+use RDF::Helper::Object;
 use vars qw($VERSION);
-$VERSION = '0.31';
+$VERSION = '1.03';
 
 sub new {
     my ($ref, %args) = @_;
@@ -21,6 +23,8 @@ sub new {
             $class = "RDF::Redland";
         }
     }
+    
+    $args{QueryInterface} ||= 'RDF::Helper::RDFQuery';
 
     if ($class eq 'RDF::Core' ) {
         require RDF::Helper::RDFCore;
@@ -30,9 +34,93 @@ sub new {
         require RDF::Helper::RDFRedland;
         return  RDF::Helper::RDFRedland->new( %args );
     }
+    elsif ( $class eq 'DBI' or $class eq 'RDF::Query' ) {
+        require RDF::Helper::DBI;
+        return  RDF::Helper::DBI->new( %args );
+    }
     else {
         die "No Helper class defined for BaseInterface '$class'\n";
     }
+}
+
+sub get_object {
+    my $self = shift;
+    my $resource = shift;
+    my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
+    my $obj = new RDF::Helper::Object( RDFHelper => $self, ResourceURI => $resource, %args );
+    return $obj;
+}
+
+sub new_query {
+    my $self = shift;
+    my ($query_string, $query_lang) = @_;
+    
+    my $class = $self->{QueryInterface};
+    eval "require $class";
+    return $class->new( $query_string, $query_lang, $self->model); 
+}
+
+sub new_resource {
+    my $self = shift;
+    my $uri = shift;
+    return RDF::Helper::Node::Resource->new( uri => $uri );
+}
+
+sub new_literal {
+    my $self = shift;
+    my ($val, $lang, $type )  = @_;
+    return RDF::Helper::Node::Literal->new( 
+        value => $val,
+        language => $lang,
+        datatype => $type
+    );
+}
+
+sub new_bnode {
+    my $self = shift;
+    my $id = shift;
+    $id ||= time . 'r' . $self->{bnodecounter}++;
+    return RDF::Helper::Node::Blank->new(
+        identifier => $id
+    );
+}
+
+sub get_statements {
+    my $self = shift;
+    my @ret_array = ();
+
+    my $e = $self->get_enumerator(@_);
+    while( my $s = $e->next ) {
+        push @ret_array, $s;
+    }
+    
+    return @ret_array;
+}
+
+sub get_triples {
+    my $self = shift;
+    my @ret_array = ();
+    
+    foreach my $stmnt ( $self->get_statements(@_)) {
+        my $subj = $stmnt->subject;
+        my $obj  = $stmnt->object;
+  
+        my $subj_value = $subj->is_blank  ? $subj->blank_identifier : $subj->uri->as_string;
+        my $obj_value;
+        if ( $obj->is_literal ) {
+            $obj_value = $obj->literal_value;
+        } elsif ($obj->is_resource) {
+            $obj_value = $obj->uri->as_string;
+        } else {
+            $obj_value = $obj->as_string;
+        }
+        
+        push @ret_array, [ $subj_value,
+                           $stmnt->predicate->uri->as_string,
+                           $obj_value ];
+    }
+    
+    return @ret_array;
 }
 
 sub exists {
@@ -43,37 +131,64 @@ sub exists {
     return 0;
 }
 
-
-sub property_hash {
+sub update_literal {
     my $self = shift;
-    my $resource = shift;
-    my %found_data = ();
-    my %seen_keys = ();
-    
-    $resource ||= $self->new_bnode;
-    
-    foreach my $t ( $self->get_triples( $resource ) ) {
+    my ($s, $p, $o, $new) = @_;
 
-        my $key = $self->resolved2prefixed( $t->[1] ) || $t->[1];
+    my $count = $self->remove_statements($s, $p, $o);
+    warn "More than one resource removed.\n" if $count > 1;
+    return $self->assert_literal($s, $p, $new);
+}
 
-        if ( $seen_keys{$key} ) {
-            if ( ref $found_data{$key} eq 'ARRAY' ) {
-                push @{$found_data{$key}}, $t->[2];
-            }
-            else {
-                my $was = $found_data{$key};
-                $found_data{$key} = [$was, $t->[2]];
-            }
+sub update_resource {
+    my $self = shift;
+    my ($s, $p, $o, $new) = @_;
+
+    my $count = $self->remove_statements($s, $p, $o);
+    warn "More than one resource removed.\n" if $count > 1;
+    return $self->assert_resource($s, $p, $new);
+}
+
+sub normalize_triple_pattern {
+    my $self = shift;
+    my ($s, $p, $o) = @_;
+    my ($subj, $pred, $obj) = (undef, undef, undef);
+
+    if (defined($s)) {
+       $subj = ref($s) ? $s : $self->new_resource( $self->{ExpandQNames} ? $self->qname2resolved($s) : $s);
+    }    
+    if (defined($p)) {
+        $pred = ref($p) ? $p : $self->new_resource( $self->{ExpandQNames} ? $self->qname2resolved($p) : $p);
+    }    
+    if (defined($o)) {
+        if ( ref( $o ) ) {
+            $obj = $o;
         }
         else {
-            $found_data{$key} = $t->[2];
+            my $testval = $self->{ExpandQNames} ? $self->qname2resolved($o) : $o;
+            my $type = $self->get_perl_type( $testval );
+            if ( $type eq 'resource' ) {
+                $obj  = $self->new_resource("$testval");
+            }
+            else {
+                $obj  = $self->new_literal("$testval");
+            }
         }
-        
-        $seen_keys{$key} = 1;
-        
+    }
+    return ( $subj, $pred, $obj );
+}
+
+sub query_interface {
+    my $self = shift;
+    my $new = shift;
+
+    if (defined($new)) {
+        $self->{QueryInterface} = $new;
+        return 1;
     }
     
-    return \%found_data;
+    $self->{QueryInterface} ||= 'RDF::Helper::RDFQuery';
+    return $self->{QueryInterface};
 }
 
 1;
@@ -98,9 +213,9 @@ RDF::Helper - Provide a consistent, Perlish interface to Perl's varous RDF proce
 
 =head1 DESCRIPTION
 
-This module intends to simplify, normalize and extend Perl's existing facilites for interacting with an RDF data. 
+This module intends to simplify, normalize and extend Perl's existing facilites for interacting with RDF data. 
 
-RDF::Helper's goal is to offer a common interface to existing packages like RDF::Redland and RDF::Core that makes things easier, more Perlish, and less verbose for everyday use, but that in no way blocks power-users from taking advantage of what those tools individually offer.
+RDF::Helper's goal is to offer a common interface to existing packages like L<RDF::Redland> and L<RDF::Core> that makes things easier, more Perlish, and less verbose for everyday use, but that in no way blocks power-users from taking advantage of what those tools individually offer.
 
 =head1 CONSTRUCTOR OPTIONS
 
@@ -114,19 +229,20 @@ RDF::Helper's goal is to offer a common interface to existing packages like RDF:
      ExpandQNames => 1
   );
 
-=head2 BaseInterFace
+=head2 BaseInterface
 
-The C<BaseInterface> option expects a string that corresponds to the class name of the underlying Perl RDF library that will be used by this instance of the Helper. Currently, only RDF::Redland is fully supported.
+The C<BaseInterface> option expects a string that corresponds to the class name of the underlying Perl RDF library that will be used by this instance of the Helper. Currently, only L<RDF::Redland> is fully supported.  The default value for this
+option if omitted is C<RDF::Redland>.
 
 =head2 Model
 
-The C<Model> option expects a blessed instance object of the RDF model that will be operated on with this instance of the Helper. Obviously, the type of object passed should correspond to the L<BaseInterface> used (RDF::Redland::Model for a BaseInterface of RDF::Redland, etc.). If this option is omitted, a new, in-memory model will be created.  
+The C<Model> option expects a blessed instance object of the RDF model that will be operated on with this instance of the Helper. Obviously, the type of object passed should correspond to the L<BaseInterface> used (L<RDF::Redland::Model> for a BaseInterface of L<RDF::Redland>, etc.). If this option is omitted, a new, in-memory model will be created.  
 
 =head2 Namespaces
 
 The C<Namespaces> option expects a hash reference of prefix/value pairs for the namespaces that will be used with this instance of the Helper. The special '#default' prefix is reserved for setting the default namespace.
 
-For convenieince, the L<RDF::Helper::Constants> class will export a number of useful constants that can be used to set the namespaces for common grammars:
+For convenience, the L<RDF::Helper::Constants> class will export a number of useful constants that can be used to set the namespaces for common grammars:
 
   use RDF::Helper;
   use RDF::Helper::Constants qw(:rdf :rss1 :foaf);
@@ -143,11 +259,15 @@ For convenieince, the L<RDF::Helper::Constants> class will export a number of us
   
 =head2 ExpandQNames
 
-Setting a non-zero value for the C<ExpandQNames> option configures the current instance of the Helper to allow for qualified URIs to be used in the arguments to many of the Helper's convenience methods. For example, given the L<Namespaces> option for the precious example, with C<ExpandQNames> turned on, the following will work as expected.
+Setting a non-zero value for the C<ExpandQNames> option configures the current instance of the Helper to allow for qualified URIs to be used in the arguments to many of the Helper's convenience methods. For example, given the L<Namespaces> option for the previous example, with C<ExpandQNames> turned on, the following will work as expected.
 
   $rdf->assert_resource( $uri, 'rdf:type', 'foaf:Person' );
   
-With C<ExpandQNames> turned off, you would have to pass the full URI for both the rdf:type predicate, and the foaf:Person object to achieve the same result.
+With C<ExpandQNames> turned off, you would have to pass the full URI for both the C<rdf:type> predicate, and the C<foaf:Person> object to achieve the same result.
+
+=head2 BaseURI
+
+If specified, this option sets what the base URI will be when working with so called abbreviated URIs, like C<#me>.  If you do not specify an explicit BaseURI option, then one will be created automatically for you.  See L<http://www.w3.org/TR/rdf-syntax-grammar/#section-Syntax-ID-xml-base> for more information on abbreviated URIs.
 
 =head1 METHODS
 
@@ -316,7 +436,7 @@ Include the contents of another, already opened, RDF model into the current mode
   $rdf->include_rdfxml(filename => $file_path)      
 
 This method will import the RDF statements contained in an RDF/XML document, either from a file or a string, into the   
-current RDF model.  If a L</BaseURI> was specified in the L<RDF::Helper> L<constructor|/"Object Constructor">, then that    
+current RDF model.  If a L</BaseURI> was specified in the L<RDF::Helper> L<constructor|/"CONSTRUCTOR OPTIONS">, then that    
 URI is used as the base for when the supplied RDF/XML is imported.  For instance, if the hash notation is used to   
 reference an RDF node (e.g. C<E<lt>rdf:Description rdf:about="#dahut"/E<gt>>), the L</BaseURI> will be prepended to the     
 C<rdf:about> URI.   
@@ -409,17 +529,17 @@ standard Perl-like accessor methods.  For more information on the use of this me
 
 =head2 arrayref2rdf
  
-   $obj->arrayref2rdf( \@list $subject, $predicate);
-   $obj->arrayref2rdf( \@list undef, $predicate);
+ $obj->arrayref2rdf(\@list, $subject, $predicate);
+ $obj->arrayref2rdf(\@list, undef, $predicate);
 
-Asserts a list of triples with the the subject $subject, predicate $predicate and object(s) contained in \@list. It the subject is undefined, a bew blank node will be used.
+Asserts a list of triples with the the subject C<$subject>, predicate C<$predicate> and object(s) contained in C<\@list>. It the subject is undefined, a new blank node will be used.
 
 =head2 hashref2rdf
 
   $object->hashref2rdf( \%hash );
   $object->hashref2rdf( \%hash, $subject );
 
-This method is the reverse of L<property_hash> and L<deep_prophash> in that it accpets a Perl hash reference and unwinds it into a setions of triples in the RDF store. If the $subject is missing or undefined a new blank node will be used.
+This method is the reverse of L</property_hash> and L</deep_prophash> in that it accpets a Perl hash reference and unwinds it into a setions of triples in the RDF store. If the C<$subject> is missing or undefined a new blank node will be used.
   
 =head2 hashlist_from_statement
 
@@ -430,7 +550,7 @@ This method is the reverse of L<property_hash> and L<deep_prophash> in that it a
 
 Accepting a sparsely populated triple pattern as its argument, this methods return a list of subject/hash reference pairs for all statements that match the pattern. Each member in the list will have the following structure:
 
-[ $subject, $hash_reference ]
+  [ $subject, $hash_reference ]
 
 =head1 ACCESSOR METHODS
 

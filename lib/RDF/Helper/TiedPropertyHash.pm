@@ -1,4 +1,4 @@
-package RDF::Helper::RDFRedland::TiedPropertyHash;
+package RDF::Helper::TiedPropertyHash;
 use strict;
 use warnings;
 require Tie::Hash;
@@ -21,7 +21,7 @@ sub new {
     }
     
     tie %data, 
-        'RDF::Helper::RDFRedland::TiedPropertyHash', 
+        'RDF::Helper::TiedPropertyHash', 
         $args{Helper}, 
         $args{ResourceURI},
         $args{Options};

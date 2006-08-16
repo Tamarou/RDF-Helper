@@ -5,7 +5,7 @@ use RDF::Redland;
 use RDF::Helper::RDFRedland::Query;
 use Cwd;
 use RDF::Helper::PerlConvenience;
-use RDF::Helper::Object;
+use RDF::Helper::Statement;
 use vars qw( @ISA );
 use Data::Dumper;
 @ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
@@ -39,9 +39,9 @@ sub new {
         $args{Namespaces}->{'#default'} = $args{BaseURI};
     }
 
-    unless (defined($args{QueryInterface})) {
-        $args{QueryInterface} = 'RDF::Helper::RDFRedland::Query';
-    }
+#     unless (defined($args{QueryInterface})) {
+#         $args{QueryInterface} = 'RDF::Helper::RDFRedland::Query';
+#     }
     
     my %foo  = reverse %{$args{Namespaces}};
     $args{_NS} = \%foo;
@@ -50,7 +50,7 @@ sub new {
 }
 
 
-sub new_resource {
+sub new_native_resource {
     my $self = shift;
     my $val = shift;
     return RDF::Redland::Node->new(
@@ -58,7 +58,7 @@ sub new_resource {
     );
 }
 
-sub new_literal {
+sub new_native_literal {
     my $self = shift;
     my ($val, $lang, $type) = @_;
     if ( defined ($type) and !ref( $type ) ) {
@@ -67,55 +67,64 @@ sub new_literal {
     return RDF::Redland::Node->new_literal("$val", $type, $lang);
 }
 
-sub new_bnode {
-    return RDF::Redland::Node->new_from_blank_identifier();
+sub new_native_bnode {
+    my $self = shift;
+    my $id = shift;
+    return RDF::Redland::Node->new_from_blank_identifier( $id );
 }
 
 sub assert_literal {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my $subj = ref($s) ? $s : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($s) : $s)
-                              );
-    my $pred = ref($p) ? $p : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($p) : $p)
-                              );
-    my $obj  = ref($o) ? $o : RDF::Redland::Node->new_literal("$o");
-
-    $self->{Model}->add_statement($subj, $pred, $obj);
+    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, undef );
+    my @nodes = map { $self->helper2native($_) } ( $subj, $pred );
+    
+    $obj  = ref($o) ? $o->isa('RDF::Helper::Node') ? $self->helper2native( $o ) : $o : $self->new_native_literal("$o");
+    push @nodes, $obj;
+    $self->{Model}->add_statement(@nodes);
 }
 
 sub assert_resource {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my $subj = ref($s) ? $s : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($s) : $s)
-                              );
-                              
-    my $pred = ref($p) ? $p : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($p) : $p)
-                              );
-                              
-    my $obj  = ref($o) ? $o : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($o) : $o)
-                              );
-
-    $self->{Model}->add_statement($subj, $pred, $obj);
+    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, undef );
+    my @nodes = map { $self->helper2native($_) } ( $subj, $pred );
+    
+    $obj = ref($o) ? $o->isa('RDF::Helper::Node') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($o) : $o);
+    
+    push @nodes, $obj;
+    $self->{Model}->add_statement(@nodes);
 }
 
+
+sub add_statement {
+    my $self = shift;
+    my $statement = shift;
+
+    my @nodes = ();
+    foreach my $type qw( subject predicate object ) {
+        push @nodes, $self->helper2native( $statement->$type );
+    }
+    
+    $self->{Model}->add_statement(@nodes);
+}
 
 sub remove_statements {
     my $self = shift;
 
     my $del_count = 0;
     
-    my $stream = $self->get_enumerator(@_);
-    while($stream && !$stream->end) {
-        $self->{Model}->remove_statement( $stream->current );
+    my $e = $self->get_enumerator(@_);
+    while( my $s = $e->next ) {
+        my @nodes = ();
+        foreach my $type qw( subject predicate object ) {
+            push @nodes, $self->helper2native( $s->$type );
+        }
+    
+        $self->{Model}->remove_statement( RDF::Redland::Statement->new( @nodes ) );
         $del_count++;
-        $stream->next;
     }
 
     return $del_count;
@@ -127,7 +136,7 @@ sub update_node {
 
     my $update_method = undef;
     
-    # first, try to grok the ype form the incoming node
+    # first, try to grok the type form the incoming node
     
     if ( ref( $new ) and $new->isa('RDF::Redland::Node') ) {
         if ( $new->is_literal ) {
@@ -156,125 +165,45 @@ sub update_node {
     return $self->$update_method( $s, $p, $o, $new );
 }
 
-sub update_literal {
-    my $self = shift;
-    my ($s, $p, $o, $new) = @_;
 
-    my $count = $self->remove_statements($s, $p, $o);
-    warn "More than one resource removed.\n" if $count > 1;
-    return $self->assert_literal($s, $p, $new);
-}
 
-sub update_resource {
-    my $self = shift;
-    my ($s, $p, $o, $new) = @_;
-
-    my $count = $self->remove_statements($s, $p, $o);
-    warn "More than one resource removed.\n" if $count > 1;
-    return $self->assert_resource($s, $p, $new);
-}
 
 sub get_enumerator {
     my $self = shift;
     my ($s, $p, $o) = @_;
 
-    my ($subj, $pred, $obj) = (undef, undef, undef);
+    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, $o );
 
-    if (defined($s)) {
-       $subj = ref($s) ? $s : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($s) : $s)
-                              );
-    }    
-    if (defined($p)) {
-        $pred = ref($p) ? $p : RDF::Redland::Node->new(
-                                  RDF::Redland::URI->new($self->{ExpandQNames} ? $self->qname2resolved($p) : $p)
-                              );
-    }    
-    if (defined($o)) {
-        if ( ref( $o ) ) {
-            $obj = $o;
-        }
-        else {
-            my $testval = $self->{ExpandQNames} ? $self->qname2resolved($o) : $o;
-            my $type = $self->get_perl_type( $testval );
-            if ( $type eq 'resource' ) {
-                $obj = RDF::Redland::Node->new(
-                    RDF::Redland::URI->new($testval)
-                );
-            }
-            else {
-                $obj  = RDF::Redland::Node->new_literal("$testval");
-            }
-        }
-    }
-
-    return $self->{Model}->find_statements(
-        RDF::Redland::Statement->new( $subj, $pred, $obj )
+    my @nodes = map { $self->helper2native($_) } ( $subj, $pred, $obj );
+    
+    return RDF::Helper::RDFRedland::Enumerator->new(
+        statement => RDF::Redland::Statement->new( @nodes ),
+        model => $self->model,
     );
 }
 
-
-sub get_triples {
+sub helper2native {
     my $self = shift;
-    my @ret_array = ();
+    my $in = shift;
     
-    foreach my $stmnt ( $self->get_statements(@_)) {
-        my $subj = $stmnt->subject;
-        my $obj  = $stmnt->object;
-  
-        my $subj_value = $subj->is_blank  ? $subj->blank_identifier : $subj->uri->as_string;
-        my $obj_value;
-        if ( $obj->is_literal ) {
-            $obj_value = $obj->literal_value;
-        } elsif ($obj->is_resource) {
-            $obj_value = $obj->uri->as_string;
-        } else {
-            $obj_value = $obj->as_string;
+    my $out = undef;
+    return undef unless $in;
+    if ( $in->is_resource ) {
+        $out = $self->new_native_resource( $in->uri->as_string );
+    }
+    elsif ( $in->is_blank ) {
+        $out = $self->new_native_bnode( $in->blank_identifier );
+    }
+    else {
+        my $type_uri = undef;
+        if ( my $uri = $in->literal_datatype ) {
+            $type_uri = $uri->as_string;
         }
-        #my $obj_value;
-        #eval {
-        #    $obj_value  = $obj->is_literal ? $obj->literal_value     : $obj->uri->as_string;
-        #};
-        #if ($@) {
-            #warn $@;
-            #warn "predicate: " . $stmnt->predicate->uri->as_string;
-            #warn qq{\$obj = "$obj"};
-            #warn qq{\$obj->is_literal = "} . $obj->is_literal . '"';
-            #warn qq{\$obj->is_resource = "} . $obj->is_resource . '"';
-            #warn qq{\$obj->is_blank = "} . $obj->is_blank . '"';
-            #warn qq{\$obj->uri = "} . $obj->uri . '"';
-            #warn qq{\$obj_value = "$obj_value"};
-            #die;
-        #}
-        
-        push @ret_array, [ $subj_value,
-                           $stmnt->predicate->uri->as_string,
-                           $obj_value ];
+        $out = $self->new_native_literal( $in->literal_value, $in->literal_value_language, $type_uri
+        );    
     }
-    
-    return @ret_array;
+    return $out;
 }
-
-sub get_statements {
-    my $self = shift;
-    my @ret_array = ();
-
-    my $stream = $self->get_enumerator(@_);
-    while( $stream && !$stream->end ) {
-        push @ret_array, $stream->current;
-        $stream->next;
-    }
-    
-    return @ret_array;
-}
-
-# sub exists {
-#     my $self = shift;
-#     if ( $self->count( @_ ) > 0 ) {
-#         return 1;
-#     }
-#     return 0;
-# }
 
 sub count {
     my $self = shift;
@@ -289,9 +218,9 @@ sub count {
 
     my $stream = $self->get_enumerator($s, $p, $o);
     
-    while( $stream && !$stream->end ) {
+    my $e = $self->get_enumerator(@_);
+    while( my $s = $e->next ) {
         $retval++;
-        $stream->next;
     }
     
     return $retval;
@@ -365,19 +294,6 @@ sub model {
     return $self->{Model};
 }
 
-sub query_interface {
-    my $self = shift;
-    my $new = shift;
-
-    if (defined($new)) {
-        $self->{QueryInterface} = $new;
-        return 1;
-    }
-    
-    $self->{QueryInterface} ||= 'RDF::Helper::RDFRedland::Query';
-    return $self->{QueryInterface};
-}
-
 sub serialize {
     my $self = shift;
     my %args = @_;
@@ -417,203 +333,72 @@ sub serialize {
     }
 }
 
-sub new_query {
-    my $self = shift;
-    my ($query_string, $query_lang) = @_;
-    
-    my $class = $self->{QueryInterface};
-    eval "require $class";
-    return $class->new( $query_string, $query_lang, $self->model); 
-}
-
 #---------------------------------------------------------------------
-# Perl convenience methods
+# Redland-specific enumerator
 #---------------------------------------------------------------------
 
-sub tied_property_hash {
-    my $self = shift;
-    my $lookup_uri = shift;
-    my $options = shift;
-    eval "require RDF::Helper::RDFRedland::TiedPropertyHash";
-    
-    return RDF::Helper::RDFRedland::TiedPropertyHash->new( Helper => $self, ResourceURI => $lookup_uri, Options => $options);
+package RDF::Helper::RDFRedland::Enumerator;
+use strict;
+use warnings;
+use RDF::Redland::Statement;
+use RDF::Helper::Statement;
 
+sub new {
+    my $proto = shift;
+    my %args = @_;
+    my $class = ref($proto) || $proto;
+    die "Not enough args" unless $args{model};
+    my $statement = delete $args{statement} || RDF::Redland::Statement->new( undef, undef, undef );
+    my $self = bless \%args, $class;
+    $self->{stream} = $self->{model}->find_statements( $statement );
+    return $self;
 }
+##
 
-sub arrayref2rdf {
+sub next {
     my $self = shift;
-    my $array     = shift;
-    my $subject   = shift;
-    my $predicate = shift;
-    
-    $subject ||= $self->new_bnode;
-    
-    foreach my $value (@{$array}) {
-        my $type = $self->get_perl_type( $value );
-                
-        if ( $type eq 'HASH' ) {
-            my $obj = $self->new_bnode;
-            $self->assert_resource( $subject, $predicate, $obj );
-            $self->hashref2rdf( $value, $obj );
-        }
-        elsif ( $type eq 'ARRAY' ) {
-            die "Lists of lists (arrays of arrays) are not compatible with storage via RDF";
-        }
-        elsif ( $type eq 'SCALAR' ) {
-            $self->assert_resource(
-                $subject, $predicate, $$value
-            );
-        }
-        else {
-            $self->assert_literal(
-                $subject, $predicate, $value
-            );
-        }
-    }
-}
-
-sub hashref2rdf {
-    my $self = shift;
-    my $hash = shift;
-    my $subject = shift;
-    
-    $subject ||= $hash->{"rdf:about"};
-    $subject ||= $self->new_bnode;
-    
-    unless ( ref( $subject ) ) {
-        $subject = $self->new_resource( $subject );
-    }
-    
-    foreach my $key (keys( %{$hash} )) {
-        next if ($key eq 'rdf:about');
-        
-        my $value = $hash->{$key};
-        my $type = $self->get_perl_type( $value );
-        my $predicate = $self->prefixed2resolved( $key );
-        
-        if ( $type eq 'HASH' ) {
-            my $obj = $value->{'rdf:about'} || $self->new_bnode;
-            $self->assert_resource( $subject, $predicate, $obj );
-            $self->hashref2rdf( $value, $obj );
-        }
-        elsif ( $type eq 'ARRAY' ) {
-            $self->arrayref2rdf( $value, $subject, $predicate );
-        }
-        # XXX Nacho: This part was buggy, but it's been ages since
-        # I ran into this problem.
-        elsif ( $type eq 'SCALAR' ) {
-            $self->assert_resource(
-                $subject, $predicate, $$value
-            );        
-        }
-        elsif ( $type eq 'resource' ) {
-            $self->assert_resource(
-                $subject, $predicate, $value
-            );        
-        }
-        else {
-            $self->assert_literal(
-                $subject, $predicate, $value
-            );
-        }
-    }
-}
-
-sub hashlist_from_statement {
-    my $self = shift;
-    my ($s, $p, $o) = @_;
-    my @lookup_subjects = ();
-    my @found_data = ();
-    
-    foreach my $stmnt ( $self->get_statements( $s, $p, $o ) ) {
-        my $subj = $stmnt->subject;
-        my $key = $subj->is_resource ? $subj->uri->as_string : $subj->blank_identifier;
-        push @found_data, [$key, $self->property_hash( $subj )];
-        
-    }
-    
-    return @found_data;
-}
-
-sub deep_prophash {
-    my $self = shift;
-    my $resource = shift;
-    my %found_data = ();
-    my %seen_keys = ();
-    
-    foreach my $stmnt ( 
-$self->get_statements($resource, undef, undef)) {
-        my $pred = $stmnt->predicate->uri->as_string,
-        my $obj  = $stmnt->object;
-        my $value;
-        
-        if ( $obj->is_literal ) {
-            $value = $obj->literal_value;
-        }
-        elsif ( $obj->is_resource ) {
-            # if nothing else in the model points to this resource
-            # just give the URI as a literal string
-            if ( $self->count( $obj, undef, undef) == 0 ) {
-                $value = $obj->uri->as_string;
-            }
-            # otherwise, recurse
-            else {
-                $value = $self->deep_prophash( $obj );
-            }
-
-        }
-        else {
-            $value = $self->deep_prophash( $obj );
-        }
-
-        my $key = $self->resolved2prefixed( $pred ) || $pred;
-        
-        if ( $seen_keys{$key} ) {
-            if ( ref $found_data{$key} eq 'ARRAY' ) {
-                push @{$found_data{$key}}, $value;
-            }
-            else {
-                my $was = $found_data{$key};
-                $found_data{$key} = [$was, $value];
-            }
-        }
-        else {
-            $found_data{$key} = $value;
-        }
-        
-        $seen_keys{$key} = 1;
-        
-    }
-    
-    return \%found_data;
-}
-#
-
-sub resourcelist {
-    my $self = shift;
-    my ( $p, $o ) = @_;
-    
-    my %seen_resources = ();
-    my @retval = ();
-    
-    foreach my $stmnt ( $self->get_statements( undef, $p, $o ) ) {
-        my $s = $stmnt->subject->is_resource ? $stmnt->subject->uri->as_string : $stmnt->subject->blank_identifier;
-        next if defined $seen_resources{$s};
-        push @retval, $s;
-        $seen_resources{$s} = 1;
+    my $in = undef;
+    if ( defined $self->{stream} && !$self->{stream}->end ) {
+        $in = $self->{stream}->current;
+        $self->{stream}->next;
     }
 
-    return @retval;
+    unless ( $in ) {;
+        delete $self->{stream};
+        return undef;
+    }
+
+    my $s = undef;
+    my @nodes = ();
+    foreach my $type qw( subject predicate object ) {
+        push @nodes, process_node( $in->$type );
+    }
+    return RDF::Helper::Statement->new( @nodes )
 }
 
-sub get_object {
-    my $self = shift;
-    my $resource = shift;
-    my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
-    my $obj = new RDF::Helper::Object( RDFHelper => $self, ResourceURI => $resource, %args );
-    return $obj;
+sub process_node {
+    my $in = shift;
+    
+    my $out = undef;
+    if ( $in->is_resource ) {
+        $out = RDF::Helper::Node::Resource->new( uri => $in->uri->as_string );
+    }
+    elsif ( $in->is_blank ) {
+        $out = RDF::Helper::Node::Blank->new( identifier => $in->blank_identifier );
+    }
+    else {
+        my $type_uri = undef;
+        if ( my $uri = $in->literal_datatype ) {
+            $type_uri = $uri->as_string;
+        }
+        $out = RDF::Helper::Node::Literal->new(
+            value => $in->literal_value,
+            language => $in->literal_value_language,
+            datatype => $type_uri
+        );    
+    }
+    return $out;
 }
-
 1;
 
 __END__

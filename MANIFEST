@@ -1,19 +1,26 @@
 Changes
+CONTRIB
 lib/RDF/Helper.pm
 lib/RDF/Helper/Constants.pm
+lib/RDF/Helper/DBI.pm
+lib/RDF/Helper/DBI/Enumerator.pm
+lib/RDF/Helper/DBI/Model.pm
+lib/RDF/Helper/DBI/Query.pm
 lib/RDF/Helper/Object.pm
 lib/RDF/Helper/PerlConvenience.pm
 lib/RDF/Helper/RDFCore.pm
 lib/RDF/Helper/RDFQuery.pm
 lib/RDF/Helper/RDFRedland.pm
 lib/RDF/Helper/RDFRedland/Query.pm
-lib/RDF/Helper/RDFRedland/TiedPropertyHash.pm
+lib/RDF/Helper/Statement.pm
+lib/RDF/Helper/TiedPropertyHash.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
 t/0_basic.t
+t/10_deep_prop_recursive.t
 t/1_nodes.t
 t/2_model_basics.t
 t/3_include_model.t

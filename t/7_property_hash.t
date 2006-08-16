@@ -1,7 +1,7 @@
-use Test::More tests => 22;
+use Test::More tests => 45;
 
 use RDF::Helper;
-use RDF::Helper::RDFRedland::TiedPropertyHash;
+use RDF::Helper::TiedPropertyHash;
 use Data::Dumper;
 #----------------------------------------------------------------------
 # RDF::Core
@@ -10,12 +10,34 @@ use Data::Dumper;
 
 SKIP: {
   eval { require RDF::Core };
-  skip "RDF::Core not installed", 0 if $@;
+  skip "RDF::Core not installed", 22 if $@;
   
-  TODO: {
-    local $TODO = 'Tied Property haseh not yet implemented';
-  }
+  my $rdf = RDF::Helper->new(
+      BaseInterface => 'RDF::Core',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      Namespaces => { 
+        dc => 'http://purl.org/dc/elements/1.1/',
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        '#default' => "http://purl.org/rss/1.0/",
+        slash => "http://purl.org/rss/1.0/modules/slash/",
+        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
+        syn => "http://purl.org/rss/1.0/modules/syndication/",
+        admin => "http://webns.net/mvcb/",
+     },
+  );
   
+  test( $rdf );
+
+  my $in_memory = RDF::Helper->new(
+      BaseInterface => 'RDF::Core',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      Namespaces => { 
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        dc => 'http://purl.org/dc/elements/1.1/',
+     },
+  );
+  
+  test_inmemory( $in_memory );
 }
 
 #----------------------------------------------------------------------
@@ -38,11 +60,54 @@ SKIP: {
         admin => "http://webns.net/mvcb/",
      },
   );
+  
+  test( $rdf );
+
+  my $in_memory = RDF::Helper->new(
+      BaseInterface => 'RDF::Redland',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      Namespaces => { 
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        dc => 'http://purl.org/dc/elements/1.1/',
+     },
+  );
+  
+  test_inmemory( $in_memory );
+}
+
+#----------------------------------------------------------------------
+# DBI
+#----------------------------------------------------------------------
+SKIP: {
+  eval { require DBI };
+  skip "DBI not installed", 1 if $@;
+  unless ( $ENV{DBI_DSN} and $ENV{DBI_USER} and $ENV{DBI_PASS} ) {
+      skip "Environment not set up for running DBI tests, see the README", 1
+  }
+
+  my $in_memory = RDF::Helper->new(
+      BaseInterface => 'DBI',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      ModelName => 'testmodel',
+      DBI_DSN => $ENV{DBI_DSN},
+      DBI_USER => $ENV{DBI_USER},
+      DBI_PASS => $ENV{DBI_PASS},
+      Namespaces => { 
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        dc => 'http://purl.org/dc/elements/1.1/',
+     },
+  );
+  
+  test_inmemory( $in_memory );
+}
+
+sub test {
+  my $rdf = shift;
   $rdf->include_rdfxml(filename => 't/data/use.perl.rss');
   
   my %hash = ();
   
-  tie %hash, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'urn:x-test:1'; 
+  tie %hash, RDF::Helper::TiedPropertyHash, $rdf, 'urn:x-test:1'; 
   is( tied(%hash), 'urn:x-test:1', 'Tied property "" overloading' );
   ok( tied(%hash) eq 'urn:x-test:1', 'Tied property eq overloading' );
   ok( tied(%hash) == 'urn:x-test:1', 'Tied property == overloading' );
@@ -81,7 +146,7 @@ SKIP: {
   ok($link_res_2->object->is_resource, 'Set an arrayref that looks like a URI encodes it as a resource');
 
   my %useperl1;
-  tie %useperl1, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'http://use.perl.org/'; 
+  tie %useperl1, RDF::Helper::TiedPropertyHash, $rdf, 'http://use.perl.org/'; 
   is( $useperl1{title}, 'use Perl', 'Get existing RSS property "title"' );
   is( $useperl1{'dc:language'}, 'en-us', 'Get existing RSS property "dc:language"' );
 
@@ -89,31 +154,21 @@ SKIP: {
   is( $useperl1{'image'}, 'http://use.perl.org/images/topics/useperl.gif', 'Resource node returns a plain value' );
 
   my %useperl2;
-  tie %useperl2, RDF::Helper::RDFRedland::TiedPropertyHash, $rdf, 'http://use.perl.org/', { Deep => 1 }; 
+  tie %useperl2, RDF::Helper::TiedPropertyHash, $rdf, 'http://use.perl.org/', { Deep => 1 }; 
   is( $useperl2{title}, 'use Perl', 'Got title for deep-tied hash' );
 
   is( ref($useperl2{'image'}), 'HASH', 'Deep-tied resource node returns a hash reference' );
   is( $useperl2{'image'}->{url}, 'http://use.perl.org/images/topics/useperl.gif', 'Traverse deep-tied resource node to image -> url property' );
 
-  my $in_memory = RDF::Helper->new(
-      BaseInterface => 'RDF::Redland',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      Namespaces => { 
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        dc => 'http://purl.org/dc/elements/1.1/',
-     },
-  );
-  
+}
+
+sub test_inmemory {
+  my $rdf = shift;
   my %dummy = ();
-  tie %dummy, RDF::Helper::RDFRedland::TiedPropertyHash, $in_memory, 'http://totalcinema.com/'; 
+  tie %dummy, RDF::Helper::TiedPropertyHash, $rdf, 'http://totalcinema.com/'; 
   
   $dummy{'dc:creator'} = [ 'mike', 'kip', 'kjetil' ];
   
   my $creators = $dummy{'dc:creator'};
   ok( ref( $creators ) eq 'ARRAY' and scalar @{$creators} == 3 );
-  #%hash = ();
-#   foreach my $t ( $rdf->get_triples( 'http://use.perl.org/', 'http://purl.org/dc/elements/1.1/norkle') ) {
-#       warn Dumper( $t );
-#   }
-  #warn $rdf->serialize;
 }

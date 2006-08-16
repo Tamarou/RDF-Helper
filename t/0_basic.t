@@ -5,7 +5,6 @@ use warnings;
 BEGIN { 
     use_ok('RDF::Helper'); 
     use_ok('RDF::Helper::Constants'); 
-
 };
 
 my $found_libs =  0;
