@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Data::Uniqid;
-use RDF::Helper::RDFRedland::TiedPropertyHash;
+use RDF::Helper::TiedPropertyHash;
 use vars qw( $AUTOLOAD );
 use overload
     '""' => \&object_uri,

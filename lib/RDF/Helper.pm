@@ -4,7 +4,7 @@ use warnings;
 use RDF::Helper::Statement;
 use RDF::Helper::Object;
 use vars qw($VERSION);
-$VERSION = '1.03';
+$VERSION = '1.05';
 
 sub new {
     my ($ref, %args) = @_;
