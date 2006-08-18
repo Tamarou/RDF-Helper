@@ -6,7 +6,7 @@ use Data::Dumper;
 sub new {
     my $proto = shift;
     my ($query_string, $query_lang, $model) = @_;
-    warn "new query called";
+    #warn "new query called";
     die "NO RDQL" if $query_lang eq 'rdql';
     my $self = {
       Model => $model,

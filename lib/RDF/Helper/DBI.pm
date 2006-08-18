@@ -39,6 +39,7 @@ sub new {
             }
             
             my $do_nuke = $args{CreateNew} || undef;
+            boostrap_rdfdb( $dbh );
             RDF::Helper::DBI::Model::bootstrap_model_db( $dbh, $args{ModelName}, $do_nuke );
             
             $args{Model} = RDF::Helper::DBI::Model->new( $dbh, $args{ModelName} );
@@ -233,6 +234,83 @@ sub serialize {
         $helper->add_statement( $s );
     }
     return $helper->serialize( %args );
+}
+
+sub boostrap_rdfdb {
+    my $dbh = shift;
+    my $do_nuke = shift;
+    
+    my $info = $dbh->table_info();
+    
+    my %tables = ();
+    while ( my $h = $info->fetchrow_hashref ) {
+        next unless $h->{TABLE_TYPE} eq 'TABLE';
+        #warn Dumper( $h );
+        my $name = $h->{TABLE_NAME};
+        $tables{lc($name)} = 1;
+    }
+    
+    if (defined( $do_nuke )) {
+        if (defined( $tables{literals} )) {
+            $dbh->do("DROP TABLE Literals") or die $dbh->errstr;
+            delete $tables{literals};
+        }
+    
+        if (defined( $tables{resources} )) {
+            $dbh->do("DROP TABLE Resources") or die $dbh->errstr;
+            delete $tables{resources};
+        }
+    
+        if (defined( $tables{bnodes} )) {
+            $dbh->do("DROP TABLE Bnodes") or die $dbh->errstr;
+            delete $tables{bnodes};
+        }
+    
+        if (defined( $tables{models} )) {
+            $dbh->do("DROP TABLE Models") or die $dbh->errstr;
+            delete $tables{models};
+        }
+        
+        foreach my $t (keys(%tables)) {
+            next unless $t =~ /^statements\d+$/;
+            $dbh->do("DROP TABLE $t") or die $dbh->errstr;
+        }
+    }
+    
+    unless ( defined( $tables{literals} )) {
+        $dbh->do("CREATE TABLE Literals (
+          ID numeric(20) NOT NULL,
+          Value text NOT NULL,
+          Language text NOT NULL,
+          Datatype text NOT NULL,
+          PRIMARY KEY (ID)
+        )") or die $dbh->errstr;
+    }
+    
+    unless ( defined( $tables{resources} )) {
+        $dbh->do("CREATE TABLE Resources (
+          ID numeric(20) NOT NULL,
+          URI text NOT NULL,
+          PRIMARY KEY (ID)
+        )") or die $dbh->errstr;
+    }
+    
+    unless ( defined( $tables{bnodes} )) {
+        $dbh->do("CREATE TABLE Bnodes (\
+          ID numeric(20) NOT NULL,\
+          Name text NOT NULL,\
+          PRIMARY KEY (ID)\
+        )") or die $dbh->errstr;
+    }
+    
+    unless ( defined( $tables{models} )) {
+        $dbh->do("CREATE TABLE Models (\
+          ID numeric(20) NOT NULL,\
+          Name text NOT NULL,\
+          PRIMARY KEY (ID)\
+        )") or die $dbh->errstr;
+    }
+    return 1;
 }
 
 1;
