@@ -11,7 +11,7 @@ my $found_libs = 0;
 
 # test( base => 'RDF::Core',    class => 'RDF::Helper::RDFCore' ); # RDF::Core Deprecated
 test( base => 'RDF::Redland', class => 'RDF::Helper::RDFRedland' );
-test( base => 'RDF::Trine', class => 'RDF::Helper::Trine' );
+test( base => 'RDF::Trine', class => 'RDF::Helper::RDFTrine' );
 
 ok( $found_libs > 0 )
   or diag(
