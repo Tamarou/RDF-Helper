@@ -7,7 +7,7 @@ use RDF::Helper::RDFRedland::Query;
 use Cwd;
 use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
-use Data::Dumper;
+
 
 has query_interface => (
     isa     => 'Str',

@@ -1,69 +1,97 @@
 package RDF::Helper::RDFRedland::Query;
-use strict;
-use warnings;
-use vars qw( @ISA );
-@ISA = qw( RDF::Redland::Query );
+use Moose;
+use RDF::Redland::Query;
 
+has [qw(query_string query_lang)] => (
+    isa      => 'Str',
+    is       => 'ro',
+    required => 1
+);
 
-sub new {
-    my $proto = shift;
-    my ($query_string, $query_lang, $model ) = @_;
-    my $class = ref ($proto) || $proto;
-    my $obj = $class->SUPER::new( $query_string, undef, undef, $query_lang );
-    $obj->{Model} = $model;
-    return bless $obj, $class;
+has model => ( is => 'ro', required => 1 );
+
+has query => (
+    isa     => 'RDF::Redland::Query',
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_query',
+    handles => { _execute => 'execute' }
+);
+
+sub _build_query {
+    my $self = shift;
+    RDF::Redland::Query->new( $self->query_string, undef, undef,
+        $self->query_lang );
 }
 
+sub BUILDARGS {
+    my $class = shift;
+    my ( $query_string, $query_lang, $model ) = @_;
+    return {
+        query_string => $query_string,
+        query_lang   => $query_lang,
+        model        => $model
+    };
+}
+
+has results => (
+    is        => 'ro',
+    lazy      => 1,
+    builder   => 'execute',
+    predicate => 'has_results',
+    clearer   => '_clear_results',
+);
+
 sub execute {
-    my $self = shift;
+    my $self  = shift;
     my $model = shift;
-    $self->{_RESULTS_} = $self->SUPER::execute( $model || $self->{Model} );
+    $self->_execute( $model || $self->model );
 }
 
 sub selectrow_hashref {
     my $self = shift;
-    unless ( defined( $self->{_RESULTS_} ) ) {
-        $self->execute;
+    $self->execute unless $self->has_results;
+
+    if ( $self->results->finished ) {
+        $self->_clear_results;
+        return;
     }
-    
-    if ( $self->{_RESULTS_}->finished ) {
-        $self->{_RESULTS_} = undef;
-        return undef;
-    }
-    
-    
+
     my $found_data = {};
-    for (my $i=0; $i < $self->{_RESULTS_}->bindings_count(); $i++) {
-            my $node = $self->{_RESULTS_}->binding_value($i);
-            my $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
-            my $key = $self->{_RESULTS_}->binding_name($i);
-            $found_data->{$key} = $value;
-    };
-    $self->{_RESULTS_}->next_result;
+    for ( my $i = 0 ; $i < $self->results->bindings_count() ; $i++ ) {
+        my $node = $self->results->binding_value($i);
+        my $value =
+          $node->is_literal ? $node->literal_value : $node->uri->as_string;
+        my $key = $self->results->binding_name($i);
+        $found_data->{$key} = $value;
+    }
+    $self->results->next_result;
     return $found_data;
 }
 
 sub selectrow_arrayref {
     my $self = shift;
-    unless ( defined( $self->{_RESULTS_} ) ) {
+    unless ( defined( $self->results ) ) {
         $self->execute;
     }
-    
-    if ( $self->{_RESULTS_}->finished ) {
-        $self->{_RESULTS_} = undef;
-        return undef;
+
+    if ( $self->results->finished ) {
+        $self->_clear_results;
+        return;
     }
-    
-    
+
     my $found_data = [];
-    for (my $i=0; $i < $self->{_RESULTS_}->bindings_count(); $i++) {
-            my $node = $self->{_RESULTS_}->binding_value($i);
-            my $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
-            push @{$found_data}, $value;
-    };
-    $self->{_RESULTS_}->next_result;
+    for ( my $i = 0 ; $i < $self->results->bindings_count() ; $i++ ) {
+        my $node = $self->results->binding_value($i);
+        my $value =
+          $node->is_literal ? $node->literal_value : $node->uri->as_string;
+        push @{$found_data}, $value;
+    }
+    $self->results->next_result;
     return $found_data;
 }
+
+1;
 
 __END__
 

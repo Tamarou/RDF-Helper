@@ -49,11 +49,7 @@ SKIP: {
         admin => "http://webns.net/mvcb/",
      },
   );
-  
-  TODO: {
-      local $TODO = 'Somethign is funky in the state of RDF::Trine here';
-  eval { test( $rdf ) }; if ($@) { fail 'RDF::Trine tests died'; diag $@ }
-  }
+   test( $rdf );
 }
 
 
