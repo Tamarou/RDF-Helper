@@ -1,4 +1,4 @@
-use Test::More tests => 57;
+use Test::More;
 
 use strict;
 use warnings;
@@ -55,6 +55,37 @@ SKIP: {
 
   my $rdf2 = RDF::Helper->new(
       BaseInterface => 'RDF::Redland',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      Namespaces => {
+        rdf => RDF_NS,
+        rss => RSS1_NS
+      },
+      ExpandQNames => 1,
+  );
+
+  test_qnames( $rdf2 );
+  #warn $rdf->serialize;
+
+}
+
+#----------------------------------------------------------------------
+# RDF::Trine
+#----------------------------------------------------------------------
+SKIP: {
+  eval { require RDF::Trine };
+  skip "RDF::Trine not installed", 19 if $@;
+
+  my $rdf = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
+      BaseURI => 'http://totalcinema.com/NS/test#'
+  );
+  
+
+  test( $rdf );
+  #print $rdf->serialize();
+
+  my $rdf2 = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
       BaseURI => 'http://totalcinema.com/NS/test#',
       Namespaces => {
         rdf => RDF_NS,
@@ -181,3 +212,4 @@ sub test_qnames {
 }
 
 
+done_testing();

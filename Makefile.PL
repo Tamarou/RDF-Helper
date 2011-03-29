@@ -4,6 +4,9 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'RDF::Helper',
     VERSION_FROM      => 'lib/RDF/Helper.pm', # finds $VERSION
+    BUILD_REQUIRES    => {
+        'Test::Simple' => '0.88',
+    },
     PREREQ_PM         => {
         'Data::Uniqid' => 0,
         'RDF::Query' => '1.040',

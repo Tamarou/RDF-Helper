@@ -10,6 +10,8 @@ use vars qw( @ISA );
 use Data::Dumper;
 @ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
 
+sub query_interface { 'RDF::Helper::RDFRedland::Query' }
+
 sub new {
     my $proto = shift;
     my %args = @_;

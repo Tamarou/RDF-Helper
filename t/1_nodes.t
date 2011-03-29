@@ -1,4 +1,4 @@
-use Test::More tests => 15;
+use Test::More;
 
 use strict;
 use warnings;
@@ -40,6 +40,22 @@ SKIP: {
 }
 
 #----------------------------------------------------------------------
+# RDF::Trine
+#----------------------------------------------------------------------
+SKIP: {
+  eval { require RDF::Trine };
+  skip "RDF::Redland not installed", 5 if $@;
+
+  my $rdf = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
+      BaseURI => 'http://totalcinema.com/NS/test#'
+  );
+
+  test( $rdf );
+
+}
+
+#----------------------------------------------------------------------
 # DBI
 #----------------------------------------------------------------------
 SKIP: {
@@ -73,3 +89,5 @@ sub test {
   ok($typed->literal_datatype->as_string eq XSD_INT);
   ok($langed->literal_value_language eq 'en-US');
 }
+
+done_testing();

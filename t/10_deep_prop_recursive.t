@@ -69,7 +69,7 @@ SKIP: {
 #----------------------------------------------------------------------
 SKIP: {
 	eval { require RDF::Trine };
-	skip "RDF::Redland not installed", 11 if $@;
+	skip "RDF::Trine not installed", 11 if $@;
 	
 	my $rdf = RDF::Helper->new(
 		BaseInterface => 'RDF::Trine',
@@ -87,7 +87,7 @@ SKIP: {
 		'value'		=> '1',
 		'rdf:type'	=> 'http://example.com/item'
 	}, 'first non-recursive' );
-	
+
 	my $second	= $rdf->property_hash( 'http://example.com/second' );
 	is_deeply( $second, {
 		'next'		=> 'http://example.com/third',
@@ -115,7 +115,6 @@ SKIP: {
 	);
 	my $deep	= $rdf->deep_prophash( 'http://example.com/recurse' );
 	is_deeply( $deep, \%expect, 'deeply recursive' );
-
 	
 }
 #----------------------------------------------------------------------

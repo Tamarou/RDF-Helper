@@ -67,9 +67,8 @@ sub property_hash {
     $resource ||= $self->new_bnode;
     
     foreach my $t ( $self->get_triples( $resource ) ) {
-
+        
         my $key = $self->resolved2prefixed( $t->[1] ) || $t->[1];
-
         if ( $seen_keys{$key} ) {
             if ( ref $found_data{$key} eq 'ARRAY' ) {
                 push @{$found_data{$key}}, $t->[2];
