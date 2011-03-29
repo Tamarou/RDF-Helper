@@ -22,7 +22,8 @@ sub test {
 
         my $helper = RDF::Helper->new( BaseInterface => $args{base} );
         $found_libs++;
-        isa_ok( $helper, $args{class} );
+        isa_ok( $helper, 'RDF::Helper' );
+        isa_ok($helper->backend, $args{class} );
     }
 }
 

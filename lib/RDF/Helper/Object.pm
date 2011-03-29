@@ -54,7 +54,7 @@ sub new {
 
     $self->{_uri_} = $args{ResourceURI} || "urn:" . Data::Uniqid::uniqid;
     $self->{_rdftype_} = $args{RDFType};
-    $self->{_defaultns_} = $args{DefaultNS} || $self->{_datastore_}->{Namespaces}->{'#default'};
+    $self->{_defaultns_} = $args{DefaultNS} || $self->{_datastore_}->{Namespaces}->{'#default'} || '';
         
     if ( defined( $args{NoTie} ) and $args{NoTie} == 1 ) {
         $self->{_data_} = $self->{_datastore_}->property_hash(

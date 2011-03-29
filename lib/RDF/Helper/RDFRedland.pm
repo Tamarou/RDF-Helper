@@ -1,14 +1,14 @@
 package RDF::Helper::RDFRedland;
-use strict;
-use warnings;
+use Moose;
 use RDF::Redland;
 use RDF::Helper::RDFRedland::Query;
 use Cwd;
 use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
-use vars qw( @ISA );
 use Data::Dumper;
-@ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
+
+with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
+
 
 sub query_interface { 'RDF::Helper::RDFRedland::Query' }
 

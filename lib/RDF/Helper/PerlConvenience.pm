@@ -1,6 +1,5 @@
 package RDF::Helper::PerlConvenience;
-use strict;
-use warnings;
+use Moose::Role; 
 use Data::Dumper;
 
 

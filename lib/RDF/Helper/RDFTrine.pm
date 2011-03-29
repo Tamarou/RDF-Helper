@@ -1,12 +1,13 @@
 package RDF::Helper::RDFTrine;
-use strict;
-use warnings;
+use Moose;
 use RDF::Trine;
 use Cwd;
 use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
 use Data::Dumper;
-our @ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
+
+with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
+
 
 sub query_interface { 'RDF::Helper::RDFQuery' }
 

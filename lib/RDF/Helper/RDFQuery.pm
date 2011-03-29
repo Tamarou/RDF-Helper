@@ -7,6 +7,7 @@ use RDF::Query;
 @ISA = qw( RDF::Query );
 use Data::Dumper;
 
+sub query_interface { 'RDF::Helper::RDFQuery' }
 
 sub new {
     my $proto = shift;
