@@ -2,21 +2,22 @@ package RDF::Helper::API;
 use Moose::Role;
 
 requires qw(
-    query_interface 
-    include_rdfxml 
-    count 
-    property_hash
-    assert_resource
     assert_literal
-    remove_statements
-    model
-    include_model    
+    assert_resource
+    count 
     deep_prophash    
-    hashref2rdf    
     get_perl_type
+    hashref2rdf    
+    include_model    
+    include_rdfxml 
+    model
     prefixed2resolved
-    tied_property_hash
+    property_hash
+    query_interface 
+    remove_statements
     resolved2prefixed
+    tied_property_hash
+    namespaces    
 );
 
 sub normalize_triple_pattern {
@@ -80,8 +81,8 @@ sub new_query {
     my $self = shift;
     my ( $query_string, $query_lang ) = @_;
 
-    my $class = $self->{QueryInterface};
-    eval "require $class";
+    my $class = $self->query_interface;    
+    Class::MOP::load_class($class);
     return $class->new( $query_string, $query_lang, $self->model );
 }
 

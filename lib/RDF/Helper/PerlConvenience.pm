@@ -1,7 +1,5 @@
 package RDF::Helper::PerlConvenience;
 use Moose::Role; 
-use Data::Dumper;
-
 
 sub get_perl_type {
     my $self = shift;
@@ -217,10 +215,10 @@ sub resourcelist {
 sub resolved2prefixed {
     my $self = shift;
     my $lookup = shift;
-    foreach my $uri ( sort {length $b <=> length $a} (keys( %{$self->{_NS}} )) ) { 
+    foreach my $uri ( sort {length $b <=> length $a} (keys( %{$self->_NS} )) ) { 
         #warn "URI $uri LOOKUP $lookup ";
         if ( $lookup =~ /^($uri)(.*)$/ ) {
-            my $prefix = $self->{_NS}->{$uri};
+            my $prefix = $self->_NS->{$uri};
             return $2 if $prefix eq '#default';
             return $prefix . ':' . $2;
         }
@@ -283,15 +281,15 @@ sub prefixed2resolved {
     
     my $uri;
     if ( $prefix ) {
-        if ( defined $self->{Namespaces}->{$prefix} ) {
-            $uri = $self->{Namespaces}->{$prefix};
+        if ( defined $self->namespaces->{$prefix} ) {
+            $uri = $self->namespaces->{$prefix};
         }
         else {
             warn "Unknown prefix: $prefix, in QName $lookup. Falling back to the default predicate URI";
         }
     }
     
-    $uri ||= $self->{Namespaces}->{'#default'};
+    $uri ||= $self->namespaces->{'#default'};
     return $uri . $name;
 }
 
@@ -300,8 +298,8 @@ sub qname2resolved {
     my $lookup = shift;
     
     my ( $prefix, $name ) = $lookup =~ /^([^:]+):(.+)$/;
-    return $lookup unless ( defined $prefix and exists($self->{Namespaces}->{$prefix}));
-    return $self->{Namespaces}->{$prefix} . $name;
+    return $lookup unless ( defined $prefix and exists($self->namespaces->{$prefix}));
+    return $self->namespaces->{$prefix} . $name;
 }
 
 1;

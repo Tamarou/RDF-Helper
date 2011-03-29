@@ -134,7 +134,7 @@ sub test {
   ok( $hash_count == $result2_count, 'sparql query returned the expected number of results' );
   
         
-    $rdf->query_interface('RDF::Helper::RDFQuery');
+#    $rdf->query_interface('RDF::Helper::RDFQuery');
 
   
     my $result3_count = 0;

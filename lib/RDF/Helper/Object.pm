@@ -54,7 +54,7 @@ sub new {
 
     $self->{_uri_} = $args{ResourceURI} || "urn:" . Data::Uniqid::uniqid;
     $self->{_rdftype_} = $args{RDFType};
-    $self->{_defaultns_} = $args{DefaultNS} || $self->{_datastore_}->{Namespaces}->{'#default'} || '';
+    $self->{_defaultns_} = $args{DefaultNS} || $self->{_datastore_}->namespaces->{'#default'} || '';
         
     if ( defined( $args{NoTie} ) and $args{NoTie} == 1 ) {
         $self->{_data_} = $self->{_datastore_}->property_hash(
@@ -171,8 +171,8 @@ sub AUTOLOAD {
     if ($attr =~ /^([^_]+)_(.+)$/) {
         my $nsprefix = $1;
         my $nsattr = $2;
-        if ($self->{_datastore_}->{Namespaces}->{$nsprefix}) {
-            $ns = $self->{_datastore_}->{Namespaces}->{$nsprefix};
+        if ($self->{_datastore_}->namespaces->{$nsprefix}) {
+            $ns = $self->{_datastore_}->namespaces->{$nsprefix};
             $attr = $nsprefix . ':' . $nsattr;
             $attr_uri = $ns . $nsattr;
         }

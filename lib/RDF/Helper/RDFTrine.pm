@@ -10,6 +10,8 @@ with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
 
 
 sub query_interface { 'RDF::Helper::RDFQuery' }
+sub _NS { shift->{_NS} }
+sub namespaces { shift->{Namespaces} }
 
 sub new {
     my $proto = shift;
