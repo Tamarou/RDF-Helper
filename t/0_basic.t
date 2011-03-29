@@ -1,4 +1,4 @@
-use Test::More tests => 5;
+use Test::More;
 use strict;
 use warnings;
 
@@ -9,14 +9,10 @@ BEGIN {
 
 my $found_libs = 0;
 
-# test( base => 'RDF::Core',    class => 'RDF::Helper::RDFCore' ); # RDF::Core Deprecated
 test( base => 'RDF::Redland', class => 'RDF::Helper::RDFRedland' );
 test( base => 'RDF::Trine', class => 'RDF::Helper::RDFTrine' );
 
-ok( $found_libs > 0 )
-  or diag(
-"You must have one of Perl's RDF libraries (RDF::Core, RDF::Redland, etc.) installed for this package to work!!!"
-  );
+ok( $found_libs > 0) or diag("You must have one of Perl's RDF libraries (RDF::Redland, RDF::Trine etc.) installed for this package to work!!!");
 
 sub test {
     my %args = @_;
@@ -29,3 +25,5 @@ sub test {
         isa_ok( $helper, $args{class} );
     }
 }
+
+done_testing();

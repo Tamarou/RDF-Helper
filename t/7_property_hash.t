@@ -3,42 +3,6 @@ use Test::More;
 use RDF::Helper;
 use RDF::Helper::TiedPropertyHash;
 use Data::Dumper;
-#----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
-
-
-SKIP: {
-  eval { require RDF::Core };
-  skip "RDF::Core not installed", 22 if $@;
-  
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      Namespaces => { 
-        dc => 'http://purl.org/dc/elements/1.1/',
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        '#default' => "http://purl.org/rss/1.0/",
-        slash => "http://purl.org/rss/1.0/modules/slash/",
-        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
-        syn => "http://purl.org/rss/1.0/modules/syndication/",
-        admin => "http://webns.net/mvcb/",
-     },
-  );
-  
-  test( $rdf );
-
-  my $in_memory = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      Namespaces => { 
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        dc => 'http://purl.org/dc/elements/1.1/',
-     },
-  );
-  
-  test_inmemory( $in_memory );
-}
 
 #----------------------------------------------------------------------
 # RDF::Redland
@@ -136,6 +100,8 @@ SKIP: {
   test_inmemory( $in_memory );
 }
 
+done_testing();
+
 sub test {
   my $rdf = shift;
   $rdf->include_rdfxml(filename => 't/data/use.perl.rss');
@@ -207,5 +173,3 @@ sub test_inmemory {
   my $creators = $dummy{'dc:creator'};
   ok( ref( $creators ) eq 'ARRAY' and scalar @{$creators} == 3 );
 }
-
-done_testing();

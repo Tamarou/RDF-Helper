@@ -8,6 +8,8 @@ use RDF::Helper::Statement;
 use Data::Dumper;
 our @ISA = qw( RDF::Helper RDF::Helper::PerlConvenience );
 
+sub query_interface { 'RDF::Helper::RDFQuery' }
+
 sub new {
     my $proto = shift;
     my %args = @_;

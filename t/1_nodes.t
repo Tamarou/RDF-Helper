@@ -8,20 +8,6 @@ use RDF::Helper;
 
 use constant URI1 => 'http://example.org/one';
 use constant XSD_INT => 'http://www.w3.org/2001/XMLSchema#int';
-#----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require RDF::Core };
-  skip "RDF::Core not installed", 5 if $@;
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#'
-  );
-  
-  test( $rdf );
-}
 
 #----------------------------------------------------------------------
 # RDF::Redland

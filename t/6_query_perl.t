@@ -3,7 +3,6 @@ use Test::More;
 use RDF::Helper;
 use Data::Dumper;
 
-
 #----------------------------------------------------------------------
 # RDF::Redland
 #----------------------------------------------------------------------
@@ -27,6 +26,34 @@ SKIP: {
   );
   
   test( $rdf );
+}
+
+#----------------------------------------------------------------------
+# RDF::Trine
+#----------------------------------------------------------------------
+SKIP: {
+  eval { require RDF::Trine };
+  skip "RDF::Trine not installed", 6 if $@;
+
+  my $rdf = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      QueryInterface => 'RDF::Helper::RDFRedland::Query',
+      Namespaces => { 
+        dc => 'http://purl.org/dc/elements/1.1/',
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        '#default' => "http://purl.org/rss/1.0/",
+        slash => "http://purl.org/rss/1.0/modules/slash/",
+        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
+        syn => "http://purl.org/rss/1.0/modules/syndication/",
+        admin => "http://webns.net/mvcb/",
+     },
+  );
+  
+  TODO: {
+      local $TODO = 'Somethign is funky in the state of RDF::Trine here';
+  eval { test( $rdf ) }; if ($@) { fail 'RDF::Trine tests died'; diag $@ }
+  }
 }
 
 #----------------------------------------------------------------------
@@ -61,6 +88,8 @@ SKIP: {
   
   test( $rdf );
 }
+
+done_testing();
 
 sub test {
   my $rdf = shift;
@@ -153,5 +182,3 @@ sub test {
     ok( $hash_count == $result3_count, 'RDF::Query sparql query returned the expected number of results' );
 
 }
-
-done_testing();

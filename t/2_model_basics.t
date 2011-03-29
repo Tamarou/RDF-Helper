@@ -10,34 +10,6 @@ use constant URI1 => 'http://example.org/one';
 use constant URI2 => 'http://example.org/two';
 
 #----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require RDF::Core };
-  skip "RDF::Core not installed", 19 if $@;
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#'
-  );
-  
-  test( $rdf );
-  #print $rdf->serialize();
-
-  my $rdf2 = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      Namespaces => {
-        rdf => RDF_NS,
-        rss => RSS1_NS
-      },
-      ExpandQNames => 1,
-  );
-  test_qnames( $rdf2 );
-  #warn $rdf2->serialize;
-}
-
-#----------------------------------------------------------------------
 # RDF::Redland
 #----------------------------------------------------------------------
 SKIP: {
@@ -143,6 +115,8 @@ SKIP: {
   test_qnames( $rdf2 );
 }
 
+done_testing();
+
 sub test {
   my $rdf = shift;
   # assert_resource - explicit constructors/nodes
@@ -210,6 +184,3 @@ sub test_qnames {
   ok( $rdf->count(undef, 'rss:description') == 1, 'count() with qnamed pred only.'); 
 
 }
-
-
-done_testing();

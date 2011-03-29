@@ -15,9 +15,6 @@ sub new {
             if ( $args{Model}->isa('RDF::Redland::Model') ) {
                 $class = "RDF::Redland";
             }
-            elsif ( $args{Model}->isa('RDF::Core::Model') ) {
-                $class = "RDF::Core";           
-            }
         }
         else {
             $class = "RDF::Trine";
@@ -25,6 +22,7 @@ sub new {
     }
     
     $args{QueryInterface} ||= 'RDF::Helper::RDFQuery';
+    
     if($class eq 'RDF::Trine') {
         require RDF::Helper::RDFTrine;
         return RDF::Helper::RDFTrine->new( %args );
@@ -32,10 +30,6 @@ sub new {
     elsif ( $class eq 'RDF::Redland' ) {
         require RDF::Helper::RDFRedland;
         return  RDF::Helper::RDFRedland->new( %args );
-    }
-    elsif ($class eq 'RDF::Core' ) {
-        require RDF::Helper::RDFCore;
-        return  RDF::Helper::RDFCore->new( %args );
     }
     elsif ( $class eq 'DBI' or $class eq 'RDF::Query' ) {
         require RDF::Helper::DBI;
@@ -218,7 +212,7 @@ RDF::Helper - Provide a consistent, Perlish interface to Perl's varous RDF proce
 
 This module intends to simplify, normalize and extend Perl's existing facilites for interacting with RDF data. 
 
-RDF::Helper's goal is to offer a common interface to existing packages like L<RDF::Redland> and L<RDF::Core> that makes things easier, more Perlish, and less verbose for everyday use, but that in no way blocks power-users from taking advantage of what those tools individually offer.
+RDF::Helper's goal is to offer a common interface to existing packages like L<RDF::Redland> that makes things easier, more Perlish, and less verbose for everyday use, but that in no way blocks power-users from taking advantage of what those tools individually offer.
 
 =head1 CONSTRUCTOR OPTIONS
 
@@ -574,7 +568,7 @@ performing queries.
 
 =head1 SEE ALSO
 
-L<RDF::Helper::Object>; L<RDF::Redland>; L<RDF::Core>; L<RDF::Query>
+L<RDF::Helper::Object>; L<RDF::Redland>; L<RDF::Query>
 
 =head1 AUTHOR
 
