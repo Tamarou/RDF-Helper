@@ -31,10 +31,6 @@ sub new {
         require RDF::Helper::RDFRedland;
         return  RDF::Helper::RDFRedland->new( %args );
     }
-    elsif ( $class eq 'DBI' or $class eq 'RDF::Query' ) {
-        require RDF::Helper::DBI;
-        return  RDF::Helper::DBI->new( %args );
-    }
     else {
         die "No Helper class defined for BaseInterface '$class'\n";
     }

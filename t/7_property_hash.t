@@ -74,33 +74,11 @@ SKIP: {
   test_inmemory( $in_memory );
 }
 
-#----------------------------------------------------------------------
-# DBI
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require DBI };
-  skip "DBI not installed", 1 if $@;
-  unless ( $ENV{DBI_DSN} and $ENV{DBI_USER} and $ENV{DBI_PASS} ) {
-      skip "Environment not set up for running DBI tests, see the README", 1
-  }
-
-  my $in_memory = RDF::Helper->new(
-      BaseInterface => 'DBI',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      ModelName => 'testmodel',
-      DBI_DSN => $ENV{DBI_DSN},
-      DBI_USER => $ENV{DBI_USER},
-      DBI_PASS => $ENV{DBI_PASS},
-      Namespaces => { 
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        dc => 'http://purl.org/dc/elements/1.1/',
-     },
-  );
-  
-  test_inmemory( $in_memory );
-}
-
 done_testing();
+
+#
+# Test Functions
+#
 
 sub test {
   my $rdf = shift;

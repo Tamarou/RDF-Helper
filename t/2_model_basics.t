@@ -71,51 +71,12 @@ SKIP: {
 
 }
 
-#----------------------------------------------------------------------
-# DBI
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require DBI };
-  skip "DBI not installed", 19 if $@;
-  unless ( $ENV{DBI_DSN} and $ENV{DBI_USER} and $ENV{DBI_PASS} ) {
-      skip "Environment not set up for running DBI tests, see the README", 19
-  }
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'DBI',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      ModelName => 'testmodel',
-      DBI_DSN => $ENV{DBI_DSN},
-      DBI_USER => $ENV{DBI_USER},
-      DBI_PASS => $ENV{DBI_PASS},
-      CreateNew => 1,
-  );
-  
-
-  
-  test( $rdf );
-
-  warn $rdf->serialize();
-  
-  my $rdf2 = RDF::Helper->new(
-      BaseInterface => 'DBI',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      ModelName => 'testmodel',
-      DBI_DSN => $ENV{DBI_DSN},
-      DBI_USER => $ENV{DBI_USER},
-      DBI_PASS => $ENV{DBI_PASS},
-      Namespaces => {
-        rdf => RDF_NS,
-        rss => RSS1_NS
-      },
-      ExpandQNames => 1,
-      CreateNew => 1,
-  );
-  
-  test_qnames( $rdf2 );
-}
 
 done_testing();
+
+#
+# Test Methods
+#
 
 sub test {
   my $rdf = shift;

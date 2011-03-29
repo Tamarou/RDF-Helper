@@ -56,40 +56,12 @@ SKIP: {
   }
 }
 
-#----------------------------------------------------------------------
-# DBI
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require DBI };
-  skip "DBI not installed", 6 if $@;
-  unless ( $ENV{DBI_DSN} and $ENV{DBI_USER} and $ENV{DBI_PASS} ) {
-      skip "Environment not set up for running DBI tests, see the README", 6
-  }
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'DBI',
-      QueryInterface => 'RDF::Helper::DBI::Query',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      ModelName => 'testmodel',
-      DBI_DSN => $ENV{DBI_DSN},
-      DBI_USER => $ENV{DBI_USER},
-      DBI_PASS => $ENV{DBI_PASS},
-      CreateNew => 1,
-      Namespaces => { 
-        dc => 'http://purl.org/dc/elements/1.1/',
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        '#default' => "http://purl.org/rss/1.0/",
-        slash => "http://purl.org/rss/1.0/modules/slash/",
-        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
-        syn => "http://purl.org/rss/1.0/modules/syndication/",
-        admin => "http://webns.net/mvcb/",
-     },
-  );
-  
-  test( $rdf );
-}
 
 done_testing();
+
+#
+# Test Methods
+# 
 
 sub test {
   my $rdf = shift;
@@ -115,8 +87,6 @@ sub test {
       USING dc FOR <http://purl.org/dc/elements/1.1/>
   |;
   
-  SKIP: {
-    skip "RDQL not implemented by DBI::Query", 1 if $rdf->isa('RDF::Helper::DBI');
   my $result1_count = 0;
   
   my $q_obj = $rdf->new_query( $query1, 'rdql' );
@@ -140,7 +110,7 @@ sub test {
   }
   
   ok( $hash_count == $array_count, 'DBI-like interface returned the expected number of results' );
-  }
+
     my $query2 = qq|
       PREFIX dc: <http://purl.org/dc/elements/1.1/>
       SELECT ?creator ?date ?subject

@@ -58,43 +58,12 @@ SKIP: {
   test( $rdf );
 }
 
-#----------------------------------------------------------------------
-# DBI
-#----------------------------------------------------------------------
-SKIP: {
-  eval { require DBI };
-  skip "DBI not installed", 28 if $@;
-  unless ( $ENV{DBI_DSN} and $ENV{DBI_USER} and $ENV{DBI_PASS} ) {
-      skip "Environment not set up for running DBI tests, see the README", 28
-  }
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'DBI',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      ModelName => 'testmodel',
-      DBI_DSN => $ENV{DBI_DSN},
-      DBI_USER => $ENV{DBI_USER},
-      DBI_PASS => $ENV{DBI_PASS},
-      Namespaces => { 
-        dc => 'http://purl.org/dc/elements/1.1/',
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        '#default' => "http://purl.org/rss/1.0/",
-        slash => "http://purl.org/rss/1.0/modules/slash/",
-        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
-        syn => "http://purl.org/rss/1.0/modules/syndication/",
-        admin => "http://webns.net/mvcb/",
-        contact => "http://www.w3.org/2000/10/swap/pim/contact#",
-        air => "http://www.daml.org/2001/10/html/airport-ont#",
-     },
-  );
-
-  #SKIP: {
-  #skip 'RDF-XML parsing not yet implemented for DBI BaseInterface', 28;  
-  test( $rdf );
-  #}
-}
-
 done_testing();
+
+
+#
+# Test Functions
+#
 
 sub test {
   my $rdf = shift;
