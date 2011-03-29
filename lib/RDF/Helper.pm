@@ -20,19 +20,22 @@ sub new {
             }
         }
         else {
-            $class = "RDF::Redland";
+            $class = "RDF::Trine";
         }
     }
     
     $args{QueryInterface} ||= 'RDF::Helper::RDFQuery';
-
-    if ($class eq 'RDF::Core' ) {
-        require RDF::Helper::RDFCore;
-        return  RDF::Helper::RDFCore->new( %args );
+    if($class eq 'RDF::Trine') {
+        require RDF::Helper::RDFTrine;
+        return RDF::Helper::RDFTrine->new( %args );
     }
     elsif ( $class eq 'RDF::Redland' ) {
         require RDF::Helper::RDFRedland;
         return  RDF::Helper::RDFRedland->new( %args );
+    }
+    elsif ($class eq 'RDF::Core' ) {
+        require RDF::Helper::RDFCore;
+        return  RDF::Helper::RDFCore->new( %args );
     }
     elsif ( $class eq 'DBI' or $class eq 'RDF::Query' ) {
         require RDF::Helper::DBI;
