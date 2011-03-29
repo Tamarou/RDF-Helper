@@ -1,34 +1,7 @@
-use Test::More tests => 18;
+use Test::More;
 
 use RDF::Helper;
 use Data::Dumper;
-#----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
-
-
-SKIP: {
-  eval { require RDF::Core};
-  skip "RDF::Core Query facilites lacking", 6 if $@;
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#',
-      Namespaces => { 
-        dc => 'http://purl.org/dc/elements/1.1/',
-        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        '#default' => "http://purl.org/rss/1.0/",
-        slash => "http://purl.org/rss/1.0/modules/slash/",
-        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
-        syn => "http://purl.org/rss/1.0/modules/syndication/",
-        admin => "http://webns.net/mvcb/",
-     },
-  );
-  
-  test( $rdf );
-}
-
-
 
 #----------------------------------------------------------------------
 # RDF::Redland
@@ -87,6 +60,8 @@ SKIP: {
   
   test( $rdf );
 }
+
+done_testing();
 
 sub test {
   my $rdf = shift;

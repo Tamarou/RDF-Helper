@@ -1,39 +1,12 @@
-use Test::More tests => 22;
+use Test::More;
 
 use RDF::Helper;
-#----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
 
 my $xml_string = undef;
 {
     local $/= undef;
     $xml_string = <DATA>;
 }
-
-SKIP: {
-  eval { require RDF::Core };
-  skip "RDF::Core not installed", 11 if $@;
-
-  my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Core',
-      BaseURI => 'http://totalcinema.com/NS/test#'
-  );
-
-ok($rdf->include_rdfxml(xml => $xml_string), 'include_rdfxml');
-ok($rdf->exists('urn:test:1', 'http://totalcinema.com/NS/test#testa', 'Test A1'), 'test t:testa (1)');
-ok($rdf->exists('urn:test:1', 'http://totalcinema.com/NS/test#testb', 'Test B1'), 'test t:testb (1)');
-ok($rdf->exists('urn:test:1', 'http://totalcinema.com/NS/test#testc', 'Test C1'), 'test t:testc (1)');
-ok(!$rdf->exists('urn:test:1', 'http://totalcinema.com/NS/test#testd', undef), 'test nonexistant t:testd');
-ok($rdf->exists('urn:test:2', 'http://totalcinema.com/NS/test#testa', 'Test A2'), 'test t:testa (2)');
-ok($rdf->exists('urn:test:2', 'http://totalcinema.com/NS/test#testb', 'Test B2'), 'test t:testb (2)');
-ok($rdf->exists('urn:test:2', 'http://totalcinema.com/NS/test#testc', 'Test C2'), 'test t:testc (2)');
-
-is($rdf->count(undef, 'http://totalcinema.com/NS/test#testa', undef), 2, 'count of t:testa');
-is($rdf->count(undef, 'http://totalcinema.com/NS/test#testb', undef), 2, 'count of t:testb');
-is($rdf->count(undef, 'http://totalcinema.com/NS/test#testc', undef), 2, 'count of t:testc');
-}
-
 
 #----------------------------------------------------------------------
 # RDF::Redland
@@ -59,6 +32,8 @@ is($rdf->count(undef, 'http://totalcinema.com/NS/test#testa', undef), 2, 'count 
 is($rdf->count(undef, 'http://totalcinema.com/NS/test#testb', undef), 2, 'count of t:testb');
 is($rdf->count(undef, 'http://totalcinema.com/NS/test#testc', undef), 2, 'count of t:testc');
 }
+
+done_testing()
 
 __DATA__
 <?xml version="1.0"?>

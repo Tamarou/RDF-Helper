@@ -187,14 +187,7 @@ sub include_rdfxml {
     unless ( $@ ) {
         $helper = RDF::Helper->new( InMemory => 1, BaseInterface => 'RDF::Redland' );
     }
-    
-    unless ( $helper ) {
-        eval { require RDF::Core };
-        unless ( $@ ) {
-            $helper = RDF::Helper->new( InMemory => 1, BaseInterface => 'RDF::Core' );
-        }    
-    }
-    
+        
     die "RDF/XML parsing not implemented natively" unless $helper;
     
     $helper->include_rdfxml( %args );
@@ -217,14 +210,7 @@ sub serialize {
     unless ( $@ ) {
         $helper = RDF::Helper->new( InMemory => 1, BaseInterface => 'RDF::Redland' );
     }
-    
-    unless ( $helper ) {
-        eval { require RDF::Core };
-        unless ( $@ ) {
-            $helper = RDF::Helper->new( InMemory => 1, BaseInterface => 'RDF::Core' );
-        }    
-    }
-    
+        
     die "Serialization not implemented natively" unless $helper;
     
     my $e = $self->get_enumerator;

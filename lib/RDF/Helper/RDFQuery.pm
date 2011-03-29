@@ -39,13 +39,7 @@ sub selectrow_hashref {
     my $found_data = {};
     for (my $i=0; $i < $self->{_RESULTS_}->bindings_count(); $i++) {
             my $node = $self->{_RESULTS_}->binding_value($i);
-            my $value = undef;
-            if ( $node->isa('RDF::Core::Node')) {
-                $value = $node->isLiteral ? $node->getValue : $node->uri->getURI;
-            }
-            else {
-                $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
-            }
+            my $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
             my $key = $self->{_RESULTS_}->binding_name($i);
             $found_data->{$key} = $value;
     };
@@ -68,13 +62,7 @@ sub selectrow_arrayref {
     my $found_data = [];
     for (my $i=0; $i < $self->{_RESULTS_}->bindings_count(); $i++) {
             my $node = $self->{_RESULTS_}->binding_value($i);
-            my $value = undef;
-            if ( $node->isa('RDF::Core::Node')) {
-                $value = $node->isLiteral ? $node->getValue : $node->uri->getURI;
-            }
-            else {
-                $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
-            }
+            my $value = $node->is_literal ? $node->literal_value : $node->uri->as_string;
             push @{$found_data}, $value;
     };
     $self->{_RESULTS_}->next_result;

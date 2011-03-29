@@ -1,4 +1,4 @@
-use Test::More qw(no_plan);
+use Test::More;
 
 use RDF::Helper;
 use Data::Dumper;
@@ -60,62 +60,9 @@ SKIP: {
 	);
 	my $deep	= $rdf->deep_prophash( 'http://example.com/recurse' );
 	is_deeply( $deep, \%expect, 'deeply recursive' );
-	
-	
 }
 
-#----------------------------------------------------------------------
-# RDF::Core
-#----------------------------------------------------------------------
-SKIP: {
-	eval { require RDF::Core };
-	skip "RDF::Core not installed", 11 if $@;
-	
-	my $rdf = RDF::Helper->new(
-		BaseInterface => 'RDF::Core',
-		BaseURI => 'http://example.com/'
-	);
-	
-	ok($rdf->include_rdfxml(xml => $xml_string), 'include_rdfxml');
-	ok($rdf->exists('http://example.com/first', 'http://example.com/value', '1'), 'test t:testa (1)');
-	
-	my $first	= $rdf->property_hash( 'http://example.com/first' );
-	is_deeply( $first, {
-		'next'		=> 'http://example.com/next',
-		'value'		=> '1',
-		'rdf:type'	=> 'http://example.com/item'
-	}, 'first non-recursive' );
-	
-	my $second	= $rdf->property_hash( 'http://example.com/second' );
-	is_deeply( $second, {
-		'next'		=> 'http://example.com/third',
-		'value'		=> '2',
-		'rdf:type'	=> 'http://example.com/item'
-	}, 'second non-recursive' );
-	
-
-	my $second_deep	= $rdf->deep_prophash( 'http://example.com/second' );
-	is_deeply( $second_deep, {
-		'next'		=> {
-						'next'		=> 'http://example.com/next',
-						'value'		=> '3',
-						'rdf:type'	=> 'http://example.com/item',
-					},
-		'value'		=> '2',
-		'rdf:type'	=> 'http://example.com/item'
-	}, 'second non-recursive' );
-	
-	my %expect;
-	%expect	= (
-		'next'		=> \%expect,
-		'value'		=> '9',
-		'rdf:type'	=> 'http://example.com/item'
-	);
-	my $deep	= $rdf->deep_prophash( 'http://example.com/recurse' );
-	is_deeply( $deep, \%expect, 'deeply recursive' );
-	
-	
-}
+done_testing();
 
 __DATA__
 <?xml version="1.0"?>
@@ -140,3 +87,4 @@ __DATA__
 		<next rdf:resource="http://example.com/recurse" />
 	</item>
 </rdf:RDF>
+
