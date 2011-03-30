@@ -432,8 +432,7 @@ Kip Hampton, khampton@totalcinema.com
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 Kip Hampton.  All rights reserved.
-
+Copyright (c) 2004 Kip Hampton.  
 =head1 LICENSE
 
 This module is free sofrware; you can redistribute it and/or modify
