@@ -2,22 +2,28 @@ package RDF::Helper::API;
 use Moose::Role;
 
 requires qw(
-    assert_literal
-    assert_resource
-    count 
-    deep_prophash    
-    get_perl_type
-    hashref2rdf    
-    include_model    
-    include_rdfxml 
-    model
-    prefixed2resolved
-    property_hash
-    query_interface 
-    remove_statements
-    resolved2prefixed
-    tied_property_hash
-    namespaces    
+  arrayref2rdf
+  assert_literal
+  assert_resource
+  deep_prophash
+  exists
+  get_perl_type
+  hashlist_from_statement
+  hashref2rdf
+  include_model
+  include_rdfxml
+  model
+  namespaces
+  new_bnode
+  prefixed2resolved
+  property_hash
+  query_interface
+  remove_statements
+  resolved2prefixed
+  resourcelist
+  serialize
+  tied_property_hash
+  update_node
 );
 
 sub normalize_triple_pattern {
@@ -58,7 +64,6 @@ sub normalize_triple_pattern {
     return ( $subj, $pred, $obj );
 }
 
-
 sub new_resource {
     my $self = shift;
     my $uri  = shift;
@@ -81,12 +86,10 @@ sub new_query {
     my $self = shift;
     my ( $query_string, $query_lang ) = @_;
 
-    my $class = $self->query_interface;    
+    my $class = $self->query_interface;
     Class::MOP::load_class($class);
     return $class->new( $query_string, $query_lang, $self->model );
 }
-
-
 
 sub new_literal {
     my $self = shift;
@@ -173,7 +176,7 @@ sub update_resource {
 
 sub helper2native {
     my $self = shift;
-    my $in   = shift; 
+    my $in   = shift;
 
     my $out = undef;
     return undef unless $in;
@@ -183,17 +186,17 @@ sub helper2native {
     elsif ( $in->is_blank ) {
         $out = $self->new_native_bnode( $in->blank_identifier );
     }
-    else {   
+    else {
         my $type_uri = undef;
         if ( my $uri = $in->literal_datatype ) {
             $type_uri = $uri->as_string;
         }
-        $out = 
+        $out =
           $self->new_native_literal( $in->literal_value,
             $in->literal_value_language, $type_uri );
-    }   
+    }
     return $out;
-}   
+}
 
 sub count {
     my $self = shift;
