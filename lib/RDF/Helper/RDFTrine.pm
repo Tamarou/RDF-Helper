@@ -1,49 +1,60 @@
 package RDF::Helper::RDFTrine;
 use Moose;
+use MooseX::Aliases;
 use RDF::Trine;
 use Cwd;
 use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
 use Data::Dumper;
 
+
+has query_interface => (
+    isa     => 'Str',
+    is      => 'ro',
+    default => 'RDF::Helper::RDFQuery'
+);
+
+has Model => (
+    isa      => 'RDF::Trine::Model',
+    accessor => 'model',
+    lazy     => 1,
+    builder  => '_build_model'
+);
+
+sub _build_model {
+    RDF::Trine::Model->new(
+        RDF::Trine::Store::Memory->new()
+    );
+}
+
+has namespaces => (
+    isa     => 'HashRef',
+    is      => 'ro',    
+    alias   => ['Namespaces'],
+    builder => '_build_namespaces'
+);
+
+sub _build_namespaces {
+    { rdf => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', };
+}
+
+has _NS => ( isa => 'HashRef', is => 'ro', );
+
+has ExpandQNames => ( isa => 'Bool', is => 'ro' );
+
 with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
 
+has BaseURI =>
+  ( isa => 'Str', is => 'ro', default => sub { 'file:' . getcwd() } );
 
-sub query_interface { 'RDF::Helper::RDFQuery' }
-sub _NS { shift->{_NS} }
-sub namespaces { shift->{Namespaces} }
-
-sub new {
-    my $proto = shift;
-    my %args = @_;
-    my $class = ref($proto) || $proto;
-
-    unless (defined($args{BaseURI})) {
-        $args{BaseURI} = 'file:' . getcwd();
+sub BUILD {
+    my ( $self, $args ) = @_;
+    unless ( defined( $self->namespaces->{'#default'} ) ) {
+        $self->namespaces->{'#default'} = $self->BaseURI;
     }
 
-    unless (defined($args{Model})) {
-        $args{Model} =
-            RDF::Trine::Model->new(
-                RDF::Trine::Store::Memory->new()
-            );
-    }
-
-    unless (defined($args{Namespaces})) {
-        $args{Namespaces} = {
-            rdf => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-        };
-    }
-
-    unless (defined($args{Namespaces}->{'#default'})) {
-        $args{Namespaces}->{'#default'} = $args{BaseURI};
-    }
-
-
-    my %foo  = reverse %{$args{Namespaces}};
-    $args{_NS} = \%foo;
-
-    return bless \%args, $class;
+    my %foo = reverse %{ $self->namespaces };
+    $self->{_NS} = \%foo;
 }
 
 sub new_native_resource {
@@ -73,7 +84,7 @@ sub assert_literal {
 
     $obj  = ref($o) ?$o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_literal("$o");
     push @nodes, $obj;
-    $self->{Model}->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
 }
 
 sub assert_resource {
@@ -86,7 +97,7 @@ sub assert_resource {
     $obj = ref($o) ? $o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($o) : $o);
 
     push @nodes, $obj;
-    $self->{Model}->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
 }
 
 sub add_statement {
@@ -97,7 +108,7 @@ sub add_statement {
     foreach my $type qw( subject predicate object ) {
         push @nodes, $self->helper2native( $statement->$type );
     }
-    $self->{Model}->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
 }
 
 sub remove_statements {
@@ -112,7 +123,7 @@ sub remove_statements {
             push @nodes, $self->helper2native( $s->$type );
         }
 
-        $self->{Model}->remove_statement( RDF::Trine::Statement->new( @nodes ) );
+        $self->model->remove_statement( RDF::Trine::Statement->new( @nodes ) );
         $del_count++;
     }
 
@@ -202,7 +213,7 @@ sub count {
 
     # if no args are passed, just return the size of the model
     unless ( defined($s) or defined($p) or defined($o) ) {
-        return $self->{Model}->size;
+        return $self->model->size;
     }
 
     my $stream = $self->get_enumerator($s, $p, $o);
@@ -256,23 +267,6 @@ sub include_rdfxml {
 #---------------------------------------------------------------------
 # Sub-object Accessors
 #---------------------------------------------------------------------
-
-sub model {
-    my $self = shift;
-    my $new = shift;
-
-    if (defined($new)) {
-        $self->{Model} = $new;
-        return 1;
-    }
-
-    unless (defined($self->{Model})) {
-        $self->{Model} = RDF::Trine::Model->new(
-             RDF::Trine::Store::Memory->new()
-        );
-    }
-    return $self->{Model};
-}
 
 sub serialize {
     my $self = shift;
