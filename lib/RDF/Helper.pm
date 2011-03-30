@@ -502,6 +502,14 @@ class name that should be used for composing and performing queries.
 
 L<RDF::Helper::Object>; L<RDF::Trine>, L<RDF::Redland>; L<RDF::Query>
 
+
+=head1 SUPPORT
+
+There is a mailing list at L<http://lists.perlrdf.org/listinfo/dev>.
+
+A bunch of people are also hanging out in C<#perlrdf> on C<irc.perl.org>.
+
+
 =head1 AUTHOR
 
 Kip Hampton, E<lt>khampton@totalcinema.com<gt>
