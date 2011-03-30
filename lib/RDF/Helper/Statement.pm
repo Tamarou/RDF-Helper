@@ -6,11 +6,11 @@ class_type 'RDF::Helper::Node::Resource';
 class_type 'RDF::Helper::Node::Literal';
 class_type 'RDF::Helper::Node::Blank';
 
-subtype 'RDF::Helper::Type::ValidNode' => as
+my $ValidNode = subtype as
 'RDF::Helper::Node::Resource|RDF::Helper::Node::Literal|RDF::Helper::Node::Blank';
 
 has [qw(subject predicate object)] => (
-    isa      => 'RDF::Helper::Type::ValidNode',
+    isa      => $ValidNode,
     is       => 'ro',
     required => 1
 );
