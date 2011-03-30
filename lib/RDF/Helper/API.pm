@@ -171,5 +171,65 @@ sub update_resource {
     return $self->assert_resource( $s, $p, $new );
 }
 
+sub helper2native {
+    my $self = shift;
+    my $in   = shift; 
+
+    my $out = undef;
+    return undef unless $in;
+    if ( $in->is_resource ) {
+        $out = $self->new_native_resource( $in->uri->as_string );
+    }
+    elsif ( $in->is_blank ) {
+        $out = $self->new_native_bnode( $in->blank_identifier );
+    }
+    else {   
+        my $type_uri = undef;
+        if ( my $uri = $in->literal_datatype ) {
+            $type_uri = $uri->as_string;
+        }
+        $out = 
+          $self->new_native_literal( $in->literal_value,
+            $in->literal_value_language, $type_uri );
+    }   
+    return $out;
+}   
+
+sub count {
+    my $self = shift;
+    my ( $s, $p, $o ) = @_;
+
+    my $retval = 0;
+
+    # if no args are passed, just return the size of the model
+    unless ( defined($s) or defined($p) or defined($o) ) {
+        return $self->model->size;
+    }
+
+    my $stream = $self->get_enumerator( $s, $p, $o );
+
+    my $e = $self->get_enumerator(@_);
+    while ( my $s = $e->next ) {
+        $retval++;
+    }
+
+    return $retval;
+
+}
+
+sub include_model {
+    my $self  = shift;
+    my $model = shift;
+
+    my $stream = $model->as_stream;
+
+    while ( $stream && !$stream->end ) {
+        $self->model->add_statement( $stream->current );
+        $stream->next;
+    }
+
+    return 1;
+}
+
 1;
 __END__
