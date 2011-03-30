@@ -94,7 +94,7 @@ sub assert_resource {
     my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, undef );
     my @nodes = map { $self->helper2native($_) } ( $subj, $pred );
 
-    $obj = ref($o) ? $o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->{ExpandQNames} ? $self->qname2resolved($o) : $o);
+    $obj = ref($o) ? $o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->ExpandQNames ? $self->qname2resolved($o) : $o);
 
     push @nodes, $obj;
     $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
