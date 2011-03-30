@@ -230,7 +230,7 @@ sub include_rdfxml {
         $p->parse_string_into_model( $args{xml}, $base_uri, $self->model() );
     }
     else {
-        die
+        confess
           "Missing argument. Yous must pass in an 'xml' or 'filename' argument";
     }
     return 1;

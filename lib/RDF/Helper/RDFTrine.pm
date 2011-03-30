@@ -248,8 +248,7 @@ sub serialize {
 #---------------------------------------------------------------------
 
 package RDF::Helper::RDFTrine::Enumerator;
-use strict;
-use warnings;
+use Moose; 
 use RDF::Trine::Statement;
 use RDF::Helper::Statement;
 
@@ -301,7 +300,13 @@ sub process_node {
     else {
         my $type_uri = undef;
         if ( my $uri = $in->literal_datatype ) {
-            $type_uri = $uri->as_string;
+            
+            $type_uri = blessed($uri)
+              ? $uri->can('as_string')
+                  ? $uri->as_string
+                  : confess "$uri is not something we can coerce"
+              : $uri;
+
         }
         $out = RDF::Helper::Node::Literal->new(
             value    => $in->literal_value,
