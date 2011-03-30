@@ -24,6 +24,19 @@ sub _build_query {
         $self->query_lang );
 }
 
+has results => (
+    is        => 'ro',
+    lazy      => 1,
+    predicate => 'has_results',
+    clearer   => '_clear_results',
+    default   => sub { shift->execute },
+);
+
+sub execute {
+    my ($self, $model) = @_;
+    $self->_execute( $model || $self->model );
+}
+
 sub BUILDARGS {
     my $class = shift;
     my ( $query_string, $query_lang, $model ) = @_;
@@ -32,20 +45,6 @@ sub BUILDARGS {
         query_lang   => $query_lang,
         model        => $model
     };
-}
-
-has results => (
-    is        => 'ro',
-    lazy      => 1,
-    builder   => 'execute',
-    predicate => 'has_results',
-    clearer   => '_clear_results',
-);
-
-sub execute {
-    my $self  = shift;
-    my $model = shift;
-    $self->_execute( $model || $self->model );
 }
 
 sub selectrow_hashref {
