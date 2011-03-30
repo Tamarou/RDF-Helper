@@ -21,72 +21,33 @@ sub BUILDARGS {
     return { subject => $s, predicate => $p, object => $o };
 }
 
-package RDF::Helper::Node;
-use strict;
-use warnings;
+package RDF::Helper::Node::API;
+use Moose::Role;
 
-sub new {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
-    if ( scalar @_ == 1 ) {
-        my $thing = shift;
-        if ( ref($thing) && $thing->isa('URI') ) {
-            return 'RDF::Helper::Node::Resource'->new( { uri => $thing } );
-        }
-        else {
-            return bless( { value => $thing }, 'RDF::Helper::Node::Literal' );
-        }
+requires 'as_string';
 
-    }
-    my %args = @_;
-    return bless \%args, $class;
-}
-
-sub is_resource {
-    my $self = shift;
-    return $self->isa('RDF::Helper::Node::Resource');
-}
-
-sub is_literal {
-    my $self = shift;
-    return $self->isa('RDF::Helper::Node::Literal');
-}
-
-sub is_blank {
-    my $self = shift;
-    return $self->isa('RDF::Helper::Node::Blank');
-}
-
-sub as_string {
-    my $self = shift;
-    if ( $self->is_literal ) {
-        return $self->literal_value;
-    }
-    elsif ( $self->is_resource ) {
-        return $self->uri_value;
-    }
-    else {
-        return $self->blank_identifier;
-    }
-}
+sub is_resource { 0 }
+sub is_literal  { 0 }
+sub is_blank    { 0 }
 
 package RDF::Helper::Node::Resource;
 use Moose;
 use URI;
-extends qw(Moose::Object RDF::Helper::Node);
+with qw(RDF::Helper::Node::API);
 
-has uri_value => (
+has uri => (
     isa      => 'Str',
-    init_arg => 'uri',
-    is       => 'ro',
+    reader   => 'uri_value',
     required => 1,
 );
 
-sub uri { URI->new( shift->uri_value ) }
+sub uri         { URI->new( shift->uri_value ) }
+sub is_resource { 1 }
+sub as_string   { shift->uri_value }
 
 package RDF::Helper::Node::Literal;
 use Moose;
-extends qw(Moose::Object RDF::Helper::Node);
+with qw(RDF::Helper::Node::API);
 
 has value => (
     isa      => 'Str',
@@ -109,10 +70,12 @@ sub literal_datatype {
     return URI->new( $self->datatype );
 }
 
+sub is_literal { 1 }
+sub as_string  { shift->literal_value }
 
 package RDF::Helper::Node::Blank;
 use Moose;
-extends qw(Moose::Object RDF::Helper::Node);
+with qw(RDF::Helper::Node::API);
 
 has identifier => (
     isa      => 'Str',
@@ -120,4 +83,8 @@ has identifier => (
     required => 1
 );
 
+sub is_blank  { 1 }
+sub as_string { shift->blank_identifier }
+
 1
+__END__

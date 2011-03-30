@@ -92,7 +92,7 @@ sub assert_literal {
 
     $obj =
         ref($o)
-      ? $o->isa('RDF::Helper::Node')
+      ? $o->does('RDF::Helper::Node::API')
           ? $self->helper2native($o)
           : $o
       : $self->new_native_literal("$o");
@@ -110,7 +110,7 @@ sub assert_resource {
 
     $obj =
         ref($o)
-      ? $o->isa('RDF::Helper::Node')
+      ? $o->does('RDF::Helper::Node::API')
           ? $self->helper2native($o)
           : $o
       : $self->new_native_resource(
@@ -159,7 +159,7 @@ sub update_node {
 
     # first, try to grok the type form the incoming node
 
-    if ( ref($new) and $new->isa('RDF::Redland::Node') ) {
+    if ( ref($new) and $new->does('RDF::Redland::Node::API') ) {
         if ( $new->is_literal ) {
             $update_method = 'update_literal';
         }
