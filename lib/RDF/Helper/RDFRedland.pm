@@ -5,7 +5,6 @@ use MooseX::Aliases;
 use RDF::Redland;
 use RDF::Helper::RDFRedland::Query;
 use Cwd;
-use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
 
 
@@ -48,8 +47,14 @@ has ExpandQNames => ( isa => 'Bool', is => 'ro' );
 
 with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
 
-has BaseURI =>
-  ( isa => 'Str', is => 'ro', default => sub { 'file:' . getcwd() } );
+has base_uri => (
+    isa     => 'Str',
+    is      => 'ro',
+    alias   => ['BaseURI'],
+    default => sub {
+        'file:' . getcwd();
+    }
+);
 
 sub BUILD {
     my ( $self, $args ) = @_;
@@ -211,7 +216,7 @@ sub include_rdfxml {
     my %args = @_;
     my $p    = RDF::Redland::Parser->new('rdfxml');
 
-    my $base_uri = RDF::Redland::URI->new( $self->{BaseURI} );
+    my $base_uri = RDF::Redland::URI->new( $self->BaseURI );
 
     if ( defined( $args{filename} ) ) {
         my $file = $args{filename};
@@ -271,12 +276,12 @@ sub serialize {
 
     if ( $args{filename} ) {
         return $serializer->serialize_model_to_file( $args{filename},
-            RDF::Redland::URI->new( $self->{BaseURI} ),
+            RDF::Redland::URI->new( $self->BaseURI ),
             $self->model );
     }
     else {
         return $serializer->serialize_model_to_string(
-            RDF::Redland::URI->new( $self->{BaseURI} ),
+            RDF::Redland::URI->new( $self->BaseURI ),
             $self->model );
     }
 }
