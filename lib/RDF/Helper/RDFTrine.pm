@@ -1,16 +1,16 @@
 package RDF::Helper::RDFTrine;
 use Moose;
 use MooseX::Aliases;
+
 use RDF::Trine;
 use Cwd;
-use RDF::Helper::PerlConvenience;
 use RDF::Helper::Statement;
 use Data::Dumper;
-
 
 has query_interface => (
     isa     => 'Str',
     is      => 'ro',
+    alias   => ['QueryInterface'],
     default => 'RDF::Helper::RDFQuery'
 );
 
@@ -22,14 +22,12 @@ has Model => (
 );
 
 sub _build_model {
-    RDF::Trine::Model->new(
-        RDF::Trine::Store::Memory->new()
-    );
+    RDF::Trine::Model->new( RDF::Trine::Store::Memory->new() );
 }
 
 has namespaces => (
     isa     => 'HashRef',
-    is      => 'ro',    
+    is      => 'ro',
     alias   => ['Namespaces'],
     builder => '_build_namespaces'
 );
@@ -42,10 +40,16 @@ has _NS => ( isa => 'HashRef', is => 'ro', );
 
 has ExpandQNames => ( isa => 'Bool', is => 'ro' );
 
-with qw(RDF::Helper::API  RDF::Helper::PerlConvenience );
+with qw(RDF::Helper::API  RDF::Helper::PerlConvenience);
 
-has BaseURI =>
-  ( isa => 'Str', is => 'ro', default => sub { 'file:' . getcwd() } );
+has base_uri => (
+    isa     => 'Str',
+    is      => 'ro',
+    alias   => ['BaseURI'],
+    default => sub {
+        'file:' . getcwd();
+    }
+);
 
 sub BUILD {
     my ( $self, $args ) = @_;
@@ -59,56 +63,69 @@ sub BUILD {
 
 sub new_native_resource {
     my $self = shift;
-    my $val = shift;
+    my $val  = shift;
     return RDF::Trine::Node::Resource->new($val);
 }
 
 sub new_native_literal {
     my $self = shift;
-    my ($val, $lang, $type) = @_;
-    return RDF::Trine::Node::Literal->new($val, $lang, $type);
+    my ( $val, $lang, $type ) = @_;
+    return RDF::Trine::Node::Literal->new( $val, $lang, $type );
 }
 
 sub new_native_bnode {
     my $self = shift;
-    my $id = shift;
-    return RDF::Trine::Node::Blank->new( $id );
+    my $id   = shift;
+    return RDF::Trine::Node::Blank->new($id);
 }
 
 sub assert_literal {
     my $self = shift;
-    my ($s, $p, $o) = @_;
+    my ( $s, $p, $o ) = @_;
 
-    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, undef );
+    my ( $subj, $pred, $obj ) =
+      $self->normalize_triple_pattern( $s, $p, undef );
     my @nodes = map { $self->helper2native($_) } ( $subj, $pred );
 
-    $obj  = ref($o) ?$o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_literal("$o");
+    $obj =
+        ref($o)
+      ? $o->does('RDF::Helper::Node::API') 
+          ? $self->helper2native($o) 
+          : $o
+      : $self->new_native_literal("$o");
     push @nodes, $obj;
-    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new(@nodes) );
 }
 
 sub assert_resource {
     my $self = shift;
-    my ($s, $p, $o) = @_;
+    my ( $s, $p, $o ) = @_;
 
-    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, undef );
+    my ( $subj, $pred, $obj ) =
+      $self->normalize_triple_pattern( $s, $p, undef );
     my @nodes = map { $self->helper2native($_) } ( $subj, $pred );
 
-    $obj = ref($o) ? $o->does('RDF::Helper::Node::API') ? $self->helper2native( $o ) : $o : $self->new_native_resource( $self->ExpandQNames ? $self->qname2resolved($o) : $o);
+    $obj =
+        ref($o)
+      ? $o->does('RDF::Helper::Node::API') 
+          ? $self->helper2native($o) 
+          : $o
+      : $self->new_native_resource(
+        $self->ExpandQNames ? $self->qname2resolved($o) : $o );
 
     push @nodes, $obj;
-    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new(@nodes) );
 }
 
 sub add_statement {
-    my $self = shift;
+    my $self      = shift;
     my $statement = shift;
 
     my @nodes = ();
     foreach my $type qw( subject predicate object ) {
         push @nodes, $self->helper2native( $statement->$type );
     }
-    $self->model->add_statement( RDF::Trine::Statement->new( @nodes ) );
+    $self->model->add_statement( RDF::Trine::Statement->new(@nodes) );
 }
 
 sub remove_statements {
@@ -117,13 +134,13 @@ sub remove_statements {
     my $del_count = 0;
 
     my $e = $self->get_enumerator(@_);
-    while( my $s = $e->next ) {
+    while ( my $s = $e->next ) {
         my @nodes = ();
         foreach my $type qw( subject predicate object ) {
             push @nodes, $self->helper2native( $s->$type );
         }
 
-        $self->model->remove_statement( RDF::Trine::Statement->new( @nodes ) );
+        $self->model->remove_statement( RDF::Trine::Statement->new(@nodes) );
         $del_count++;
     }
 
@@ -132,28 +149,28 @@ sub remove_statements {
 
 sub update_node {
     my $self = shift;
-    my ($s, $p, $o, $new) = @_;
+    my ( $s, $p, $o, $new ) = @_;
 
     my $update_method = undef;
 
     # first, try to grok the type form the incoming node
 
-    if ( ref( $new ) and $new->does('RDF::Trine::Node::API') ) {
+    if ( ref($new) and $new->does('RDF::Trine::Node::API') ) {
         if ( $new->is_literal ) {
             $update_method = 'update_literal';
         }
-        elsif ( $new->is_resource or $new->is_blank) {
+        elsif ( $new->is_resource or $new->is_blank ) {
             $update_method = 'update_resource';
         }
     }
 
-    unless ( $update_method ) {
+    unless ($update_method) {
         foreach my $stmnt ( $self->get_statements( $s, $p, $o ) ) {
             my $obj = $stmnt->object;
             if ( $obj->is_literal ) {
                 $update_method = 'update_literal';
             }
-            elsif ( $obj->is_resource or $obj->is_blank) {
+            elsif ( $obj->is_resource or $obj->is_blank ) {
                 $update_method = 'update_resource';
             }
             else {
@@ -167,15 +184,15 @@ sub update_node {
 
 sub get_enumerator {
     my $self = shift;
-    my ($s, $p, $o) = @_;
+    my ( $s, $p, $o ) = @_;
 
-    my ($subj, $pred, $obj) = $self->normalize_triple_pattern( $s, $p, $o );
+    my ( $subj, $pred, $obj ) = $self->normalize_triple_pattern( $s, $p, $o );
 
     my @nodes = map { $self->helper2native($_) } ( $subj, $pred, $obj );
 
     return RDF::Helper::RDFTrine::Enumerator->new(
-        statement => RDF::Trine::Statement->new( @nodes ),
-        model => $self->model,
+        statement => RDF::Trine::Statement->new(@nodes),
+        model     => $self->model,
     );
 }
 
@@ -183,22 +200,22 @@ sub get_enumerator {
 # Batch inclusions
 #---------------------------------------------------------------------
 
-
 sub include_rdfxml {
     my $self = shift;
     my %args = @_;
-    my $p = RDF::Trine::Parser->new('rdfxml');
+    my $p    = RDF::Trine::Parser->new('rdfxml');
 
-    my $base_uri = $self->{BaseURI};
+    my $base_uri = $self->BaseURI;
 
-    if (defined( $args{filename} ) ) {
-        $p->parse_file_into_model($base_uri, $args{filename}, $self->model() );
+    if ( defined( $args{filename} ) ) {
+        $p->parse_file_into_model( $base_uri, $args{filename}, $self->model() );
     }
-    elsif (defined( $args{xml} ) ) {
-        $p->parse_into_model($base_uri, $args{xml}, $self->model() );
+    elsif ( defined( $args{xml} ) ) {
+        $p->parse_into_model( $base_uri, $args{xml}, $self->model() );
     }
     else {
-        die "Missing argument. Yous must pass in an 'xml' or 'filename' argument";
+        die
+          "Missing argument. Yous must pass in an 'xml' or 'filename' argument";
     }
     return 1;
 }
@@ -216,21 +233,19 @@ sub serialize {
     my $serializer = RDF::Trine::Serializer->new( $args{format} );
 
     if ( $args{filename} ) {
-        return $serializer->serialize_model_to_file($args{filename}, $self->model);
+        return $serializer->serialize_model_to_file( $args{filename},
+            $self->model );
     }
     else {
-        return $serializer->serialize_model_to_string($self->model)
+        return $serializer->serialize_model_to_string( $self->model );
     }
 }
 
-
 1;
-
 
 #---------------------------------------------------------------------
 # RDF::Trine-specific enumerator
 #---------------------------------------------------------------------
-
 
 package RDF::Helper::RDFTrine::Enumerator;
 use strict;
@@ -240,10 +255,11 @@ use RDF::Helper::Statement;
 
 sub new {
     my $proto = shift;
-    my %args = @_;
+    my %args  = @_;
     my $class = ref($proto) || $proto;
     die "Not enough args" unless $args{model};
-    my $statement = delete $args{statement} || RDF::Trine::Statement->new( undef, undef, undef );
+    my $statement = delete $args{statement}
+      || RDF::Trine::Statement->new( undef, undef, undef );
     my $self = bless \%args, $class;
     $self->{stream} = $self->{model}->get_statements( $statement->nodes );
     return $self;
@@ -251,23 +267,24 @@ sub new {
 
 sub next {
     my $self = shift;
-    my $in = undef;
+    my $in   = undef;
     if ( defined $self->{stream} && !$self->{stream}->end ) {
         $in = $self->{stream}->current;
         $self->{stream}->next;
     }
 
-    unless ( $in ) {;
+    unless ($in) {
+        ;
         delete $self->{stream};
         return undef;
     }
 
-    my $s = undef;
+    my $s     = undef;
     my @nodes = ();
     foreach my $type qw( subject predicate object ) {
         push @nodes, process_node( $in->$type );
     }
-    return RDF::Helper::Statement->new( @nodes )
+    return RDF::Helper::Statement->new(@nodes);
 }
 
 sub process_node {
@@ -278,7 +295,8 @@ sub process_node {
         $out = RDF::Helper::Node::Resource->new( uri => $in->uri_value );
     }
     elsif ( $in->is_blank ) {
-        $out = RDF::Helper::Node::Blank->new( identifier => $in->blank_identifier );
+        $out =
+          RDF::Helper::Node::Blank->new( identifier => $in->blank_identifier );
     }
     else {
         my $type_uri = undef;
@@ -286,7 +304,7 @@ sub process_node {
             $type_uri = $uri->as_string;
         }
         $out = RDF::Helper::Node::Literal->new(
-            value => $in->literal_value,
+            value    => $in->literal_value,
             language => $in->literal_value_language,
             datatype => $type_uri
         );

@@ -38,7 +38,7 @@ SKIP: {
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
       BaseURI => 'http://totalcinema.com/NS/test#',
-      QueryInterface => 'RDF::Helper::RDFRedland::Query',
+      QueryInterface => 'RDF::Helper::RDFQuery',
       Namespaces => { 
         dc => 'http://purl.org/dc/elements/1.1/',
         rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
