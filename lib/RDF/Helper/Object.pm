@@ -15,15 +15,15 @@ use overload
 
 =head1 NAME
 
-RDF::Helper::Object - Perl extension for blah blah blah
+RDF::Helper::Object - Perl extension to use RDF property names as methods
 
 =head1 SYNOPSIS
 
   use RDF::Helper;
   my $rdf = RDF::Helper->new(
-      BaseInterface => 'RDF::Redland',
+      BaseInterface => 'RDF::Trine',
       Namespaces => { 
-        dc => 'http://purl.org/dc/elements/1.1/',
+        dc => 'http://purl.org/dc/terms/',
         rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
         '#default' => "http://purl.org/rss/1.0/"
      }
