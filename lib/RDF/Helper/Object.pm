@@ -2,7 +2,7 @@ package RDF::Helper::Object;
 use strict;
 use warnings;
 use Data::Dumper;
-use Data::Uniqid;
+use Data::UUID;
 use RDF::Helper::TiedPropertyHash;
 use vars qw( $AUTOLOAD );
 use overload
@@ -51,8 +51,11 @@ sub new {
 
     my $self = {};
     $self->{_datastore_} = $args{RDFHelper};
+    my $ug    = new Data::UUID;
+    my $uuid = $ug->create();
 
-    $self->{_uri_} = $args{ResourceURI} || "urn:" . Data::Uniqid::uniqid;
+    $self->{_uri_} = $args{ResourceURI} || "urn:" . $ug->to_string( $uuid );
+
     $self->{_rdftype_} = $args{RDFType};
     $self->{_defaultns_} = $args{DefaultNS} || $self->{_datastore_}->namespaces->{'#default'} || '';
         
