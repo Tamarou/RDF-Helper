@@ -38,6 +38,18 @@ SKIP: {
   test_qnames( $rdf2 );
   #warn $rdf->serialize;
 
+  my $rdf3 = RDF::Helper->new(
+      BaseInterface => 'RDF::Redland',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      namespaces => {
+        rdf => RDF_NS,
+        rss => RSS1_NS
+      },
+      ExpandQNames => 1,
+  );
+
+  test_qnames( $rdf3 );
+
 }
 
 #----------------------------------------------------------------------
@@ -68,6 +80,17 @@ SKIP: {
 
   test_qnames( $rdf2 );
   #warn $rdf->serialize;
+  my $rdf3 = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      namespaces => {
+        rdf => RDF_NS,
+        rss => RSS1_NS
+      },
+      ExpandQNames => 1,
+  );
+
+  test_qnames( $rdf3 );
 
 }
 

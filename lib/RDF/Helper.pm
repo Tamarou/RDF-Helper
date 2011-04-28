@@ -49,7 +49,7 @@ RDF::Helper - Provide a consistent, high-level API for working with RDF with Per
   
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      Namespaces => { 
+      namespaces => { 
           dct => 'http://purl.org/dc/terms/',
           rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
          '#default' => "http://purl.org/rss/1.0/",
@@ -73,7 +73,7 @@ which is closer to RDF.
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      Namespaces => { 
+      namespaces => { 
           dc => 'http://purl.org/dc/terms/',
           rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
          '#default' => "http://purl.org/rss/1.0/",
@@ -98,9 +98,9 @@ used (L<RDF::Trine::Model> for a BaseInterface of L<RDF::Trine>,
 etc.). If this option is omitted, a new, in-memory model will be
 created.
 
-=head2 Namespaces
+=head2 namespaces
 
-The C<Namespaces> option expects a hash reference of prefix/value
+The C<namespaces> option expects a hash reference of prefix/value
 pairs for the namespaces that will be used with this instance of the
 Helper. The special '#default' prefix is reserved for setting the
 default namespace.
@@ -114,7 +114,7 @@ common grammars:
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      Namespaces => { 
+      namespaces => { 
           rdf => RDF_NS,
           rss => RSS1_NS,
           foaf => FOAF_NS
@@ -127,7 +127,7 @@ common grammars:
 Setting a non-zero value for the C<ExpandQNames> option configures the
 current instance of the Helper to allow for qualified URIs to be used
 in the arguments to many of the Helper's convenience methods. For
-example, given the L<Namespaces> option for the previous example, with
+example, given the L<namespaces> option for the previous example, with
 C<ExpandQNames> turned on, the following will work as expected.
 
   $rdf->assert_resource( $uri, 'rdf:type', 'foaf:Person' );

@@ -50,6 +50,22 @@ SKIP: {
      },
   );
    test( $rdf );
+
+  my $rdf2 = RDF::Helper->new(
+      BaseInterface => 'RDF::Trine',
+      BaseURI => 'http://totalcinema.com/NS/test#',
+      QueryInterface => 'RDF::Helper::RDFQuery',
+      namespaces => { 
+        dc => 'http://purl.org/dc/elements/1.1/',
+        rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        '#default' => "http://purl.org/rss/1.0/",
+        slash => "http://purl.org/rss/1.0/modules/slash/",
+        taxo => "http://purl.org/rss/1.0/modules/taxonomy/",
+        syn => "http://purl.org/rss/1.0/modules/syndication/",
+        admin => "http://webns.net/mvcb/",
+     },
+  );
+   test( $rdf2 );
 }
 
 

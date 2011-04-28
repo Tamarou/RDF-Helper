@@ -22,7 +22,7 @@ RDF::Helper::Object - Perl extension to use RDF property names as methods
   use RDF::Helper;
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      Namespaces => { 
+      namespaces => { 
         dc => 'http://purl.org/dc/terms/',
         rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
         '#default' => "http://purl.org/rss/1.0/"
