@@ -159,7 +159,7 @@ sub test {
              $result3_count++;
         }
     }
-  warn "Hash count $hash_count ER@ count $result3_count \n";
+  note "Hash count $hash_count ER@ count $result3_count \n";
 
     ok( $hash_count == $result3_count, 'RDF::Query sparql query returned the expected number of results' );
 
