@@ -33,7 +33,7 @@ SKIP: {
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Trine };
-  skip "RDF::Trine not installed", 6 if $@;
+  skip "RDF::Trine not installed", 12 if $@;
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',

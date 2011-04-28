@@ -14,7 +14,7 @@ use constant URI2 => 'http://example.org/two';
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Redland };
-  skip "RDF::Redland not installed", 19 if $@;
+  skip "RDF::Redland not installed", 25 if $@;
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Redland',
@@ -57,7 +57,7 @@ SKIP: {
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Trine };
-  skip "RDF::Trine not installed", 19 if $@;
+  skip "RDF::Trine not installed", 25 if $@;
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
