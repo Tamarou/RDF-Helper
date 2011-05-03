@@ -121,7 +121,7 @@ common grammars:
      },
      ExpandQNames => 1
   );
-  
+
 =head2 ExpandQNames
 
 Setting a non-zero value for the C<ExpandQNames> option configures the
@@ -337,12 +337,12 @@ current model.
 
 This method will import the RDF statements contained in an RDF/XML
 document, either from a file or a string, into the current RDF model.
-If a L</BaseURI> was specified in the L<RDF::Helper>
+If a L</base_uri> was specified in the L<RDF::Helper>
 L<constructor|/"CONSTRUCTOR OPTIONS">, then that URI is used as the
 base for when the supplied RDF/XML is imported.  For instance, if the
 hash notation is used to reference an RDF node
 (e.g. C<E<lt>rdf:Description rdf:about="#dahut"/E<gt>>), the
-L</BaseURI> will be prepended to the C<rdf:about> URI.
+L</base_uri> will be prepended to the C<rdf:about> URI.
 
 =head2 serialize
 
@@ -359,21 +359,12 @@ types:
 
 =over 4     
 
-=item *     
-
-rdfxml      
-
-=item *     
-
-rdfxml-abbrev   
-
-=item *     
-
-ntriple     
-
-=item *     
-
-trix    
+=item * ntriples
+=item * nquads 
+=item * rdfxml 
+=item * rdfjson 
+=item * ntriples-canonical 
+=item * turtle
 
 =back
 
