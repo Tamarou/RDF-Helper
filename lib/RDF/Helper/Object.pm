@@ -25,13 +25,14 @@ RDF::Helper::Object - Perl extension to use RDF property names as methods
       namespaces => { 
         dc => 'http://purl.org/dc/terms/',
         rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        '#default' => "http://purl.org/rss/1.0/"
+        '#default' => "http://xmlns.com/foaf/0.1/"
      }
   );
-  my $obj = $rdf->get_object('http://use.perl.org/');
-  $obj->rdf_type("http://purl.org/rss/1.0/channel");
-  $obj->title("RSS Channel");
-  $obj->description("The description of this RSS feed");
+  my $obj = $rdf->get_object('http://dahut.pm.org/dahut_group.rdf#bender');
+  $obj->rdf_type('http://xmlns.com/foaf/0.1/Person');
+  $obj->name("Bender");
+  $obj->dc_description("A description of Bender");
+  print $rdf->serialize(format => 'rdfxml')
 
 =head1 DESCRIPTION
 
