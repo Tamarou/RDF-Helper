@@ -10,9 +10,7 @@ use RDF::Helper;
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Redland };
-  skip "RDF::Redland not installed", 2 if $@;
-
-
+  skip "RDF::Redland not installed", 5 if $@;
   test( 'RDF::Redland' );
 }
 
@@ -21,8 +19,7 @@ SKIP: {
 #----------------------------------------------------------------------
 SKIP: {
   eval { require RDF::Trine };
-  skip "RDF::Trine not installed", 2 if $@;
-
+  skip "RDF::Trine not installed", 5 if $@;
   test( 'RDF::Trine' );
 }
 
@@ -47,6 +44,10 @@ sub test {
   $obj->name("Bender");
   $obj->dc_description("A description of Bender");
   my $xmlstring = $rdf->serialize(format => 'rdfxml');
-  like($xmlstring, qr|xmlns:dc="http://purl.org/dc/terms/"|, 'DC prefix declaration');
-  like($xmlstring, qr|<dc:description>|, 'DC element present');
+  like($xmlstring, qr|xmlns:dc="http://purl.org/dc/terms/"|, 'RDF/XML DC prefix declaration');
+  like($xmlstring, qr|<dc:description>|, 'RDF/XML DC element present');
+  my $turtlestring = $rdf->serialize(format => 'turtle');
+  like($turtlestring, qr|\@prefix dc: <http://purl.org/dc/terms/> .|, 'Turtle DC prefix declaration');
+  like($turtlestring, qr|dc:description|, 'Turtle DC property present');
+  like($turtlestring, qr|a <http://xmlns.com/foaf/0.1/Person>|, 'Turtle type present');
 }
