@@ -230,7 +230,11 @@ sub serialize {
 
     $args{format} ||= 'rdfxml';
 
-    my $serializer = RDF::Trine::Serializer->new( $args{format} );
+    $namespaces = $self->namespaces;
+    delete %{$namespaces}{'#default'};
+    my $serializer = RDF::Trine::Serializer->new( $args{format},
+						  namespaces => $namespaces,
+						  base_uri => $self->base_uri );
 
     if ( $args{filename} ) {
         return $serializer->serialize_model_to_file( $args{filename},
