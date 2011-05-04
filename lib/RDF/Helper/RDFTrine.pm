@@ -230,10 +230,10 @@ sub serialize {
 
     $args{format} ||= 'rdfxml';
 
-    $namespaces = $self->namespaces;
-    delete %{$namespaces}{'#default'};
+    my %namespaces = %{$self->namespaces};
+    delete $namespaces{'#default'};
     my $serializer = RDF::Trine::Serializer->new( $args{format},
-						  namespaces => $namespaces,
+						  namespaces => \%namespaces,
 						  base_uri => $self->base_uri );
 
     if ( $args{filename} ) {
