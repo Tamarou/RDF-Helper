@@ -36,6 +36,22 @@ RDF::Helper::Object - Perl extension to use RDF property names as methods
 
 =head1 DESCRIPTION
 
+An object of this class is returned by the L<RDF::Helper>
+C<get_object> method, which takes a B<subject> URI as the first
+argument, and optionally a hash or hashref of options as the second
+argument.
+
+On this object, you may then call methods that correspond to property
+names of the properties you want to get or set.
+
+For properties in the default namespace, you may use them without any
+regard to prefixes, whereas with properties in other namespaces, you
+need to use the prefix and an underscore before the property name.
+
+This class does not make any attempt to verify whether the methods are
+actually valid properties within the used schema, it just blindly does
+what you tell it to.
+
 =cut
 
 sub new {
