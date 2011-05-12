@@ -52,6 +52,12 @@ This class does not make any attempt to verify whether the methods are
 actually valid properties within the used schema, it just blindly does
 what you tell it to.
 
+To set more than one object, use an arrayref as argument, e.g.
+
+  $obj->rdfs_label(['Foo', 'Bar'])
+
+will result in two triples, one for each C<rdfs:label>.
+
 =cut
 
 sub new {
