@@ -17,7 +17,7 @@ sub BUILDARGS {
     my $this  = shift;
     my $args  = $this->SUPER::BUILDARGS(@_);
     return $args if $args->{backend};
-    
+
     my $class = delete $args->{BaseInterface};
 
     $class = 'RDF::Redland'
@@ -46,10 +46,10 @@ RDF::Helper - Provide a consistent, high-level API for working with RDF with Per
 =head1 SYNOPSIS
 
   use RDF::Helper;
-  
+
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      namespaces => { 
+      namespaces => {
           dct => 'http://purl.org/dc/terms/',
           rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
          '#default' => "http://purl.org/rss/1.0/",
@@ -73,7 +73,7 @@ which is closer to RDF.
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      namespaces => { 
+      namespaces => {
           dc => 'http://purl.org/dc/terms/',
           rdf => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
          '#default' => "http://purl.org/rss/1.0/",
@@ -114,7 +114,7 @@ common grammars:
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
-      namespaces => { 
+      namespaces => {
           rdf => RDF_NS,
           rss => RSS1_NS,
           foaf => FOAF_NS
@@ -293,9 +293,9 @@ array may look like this:
 
 =head2 resourcelist
 
-  @subjects = $rdf->resourcelist()      
-  @subjects = $rdf->resourcelist($predicate)    
-  @subjects = $rdf->resourcelist($predicate, $object)   
+  @subjects = $rdf->resourcelist()
+  @subjects = $rdf->resourcelist($predicate)
+  @subjects = $rdf->resourcelist($predicate, $object)
 
 This method returns the unique list of subject URIs from within the
 RDF model that optionally match the predicate and/or object arguments.
@@ -332,8 +332,8 @@ current model.
 
 =head2 include_rdfxml
 
-  $rdf->include_rdfxml(xml => $xml_string)      
-  $rdf->include_rdfxml(filename => $file_path)      
+  $rdf->include_rdfxml(xml => $xml_string)
+  $rdf->include_rdfxml(filename => $file_path)
 
 This method will import the RDF statements contained in an RDF/XML
 document, either from a file or a string, into the current RDF model.
@@ -346,10 +346,10 @@ L</base_uri> will be prepended to the C<rdf:about> URI.
 
 =head2 serialize
 
-  $string = $rdf->serialize()   
-  $string = $rdf->serialize(format => 'ntriple')    
-  $rdf->serialize(filename => 'out.rdf')    
-  $rdf->serialize(filename => 'out.n3', format => 'ntriple')    
+  $string = $rdf->serialize()
+  $string = $rdf->serialize(format => 'ntriple')
+  $rdf->serialize(filename => 'out.rdf')
+  $rdf->serialize(filename => 'out.n3', format => 'ntriple')
 
 Serializes the back-end RDF model to a string, using the specified
 format type, or defaulting to abbreviated RDF/XML.  The serialization
@@ -357,13 +357,13 @@ types depends on which RDF back-end is in use.  The L<RDF::Trine>
 support within L<RDF::Helper> supports the following serialization
 types:
 
-=over 4     
+=over 4
 
 =item * ntriples
-=item * nquads 
-=item * rdfxml 
-=item * rdfjson 
-=item * ntriples-canonical 
+=item * nquads
+=item * rdfxml
+=item * rdfjson
+=item * ntriples-canonical
 =item * turtle
 
 =back
@@ -395,7 +395,7 @@ will be returned as an array reference.
 It is important to note that this is a read-only dump from the RDF
 model.  For a "live" alternative to this, see L</tied_property_hash>.
 
-=head2 deep_prophash    
+=head2 deep_prophash
 
   $hashref = $rdf->deep_prophash($subject)
 
@@ -475,8 +475,8 @@ the following structure:
 
 =head2 model
 
-  $model = $rdf->model()    
-  $rdf->model($new_model)   
+  $model = $rdf->model()
+  $rdf->model($new_model)
 
 An accessor method that can be used to retrieve or set the back-end
 RDF model that this L<RDF::Helper> instance uses.
@@ -507,9 +507,9 @@ Kip Hampton, E<lt>khampton@totalcinema.com<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2004-2006 by Kip Hampton. Mike Nachbaur
+Copyright 2004-2011 by Kip Hampton, Chris Prather, Mike Nachbaur
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 =cut
