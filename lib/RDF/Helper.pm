@@ -360,10 +360,15 @@ types:
 =over 4
 
 =item * ntriples
+
 =item * nquads
+
 =item * rdfxml
+
 =item * rdfjson
+
 =item * ntriples-canonical
+
 =item * turtle
 
 =back
