@@ -50,7 +50,7 @@ need to use the prefix and an underscore before the property name.
 
 This class does not make any attempt to verify whether the methods are
 actually valid properties within the used schema, it just blindly does
-what you tell it to.
+what you tell it to. It is suitable for creating relatively simple RDF.
 
 To set more than one object, use an arrayref as argument, e.g.
 
