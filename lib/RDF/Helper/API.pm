@@ -94,6 +94,9 @@ sub new_query {
 sub new_literal {
     my $self = shift;
     my ( $val, $lang, $type ) = @_;
+    if (defined($type)) {
+      $type = $self->{ExpandQNames} ? $self->qname2resolved($type) : $type;
+    }
     return RDF::Helper::Node::Literal->new(
         value    => $val,
         language => $lang,

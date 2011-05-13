@@ -60,10 +60,7 @@ sub test {
   my $langed = $rdf->new_literal('Speek Amurrican', 'en-US');
 
   is($typed->literal_datatype->as_string, XSD_INT);
- TODO: {
-    local $TODO = "Shouldn't it be able to expand qnames for datatypes too?";
-    is($typed2->literal_datatype->as_string, 'http://www.w3.org/2001/XMLSchema#decimal');
-  }
+  is($typed2->literal_datatype->as_string, 'http://www.w3.org/2001/XMLSchema#decimal');
   is($langed->literal_value_language, 'en-US');
 }
 
