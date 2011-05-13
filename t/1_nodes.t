@@ -18,6 +18,10 @@ SKIP: {
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Redland',
+      namespaces => {
+		     xsd => 'http://www.w3.org/2001/XMLSchema#',
+		    },
+      ExpandQNames => 1,
       BaseURI => 'http://totalcinema.com/NS/test#'
   );
   
@@ -34,6 +38,10 @@ SKIP: {
 
   my $rdf = RDF::Helper->new(
       BaseInterface => 'RDF::Trine',
+      namespaces => {
+		     xsd => 'http://www.w3.org/2001/XMLSchema#',
+		    },
+      ExpandQNames => 1,
       BaseURI => 'http://totalcinema.com/NS/test#'
   );
 
