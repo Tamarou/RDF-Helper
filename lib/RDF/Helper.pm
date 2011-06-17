@@ -87,7 +87,8 @@ The C<BaseInterface> option expects a string that corresponds to the
 class name of the underlying Perl RDF library that will be used by
 this instance of the Helper. L<RDF::Trine> is the default, but
 C<RDF::Redland> is retained as an option for historical reasons, but
-may be removed in the future.
+may be removed in the future. If you have a Redland-based database,
+you can use L<RDF::Trine::Store::Redland>.
 
 =head2 Model
 
