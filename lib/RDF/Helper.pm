@@ -59,7 +59,7 @@ RDF::Helper - Provide a consistent, high-level API for working with RDF with Per
 =head1 DESCRIPTION
 
 This module intends to simplify, normalize and extend Perl's existing
-facilites for interacting with RDF data.
+facilities for interacting with RDF data.
 
 RDF::Helper's goal is to offer a syntactic sugar which will enable
 developers to work more efficiently. To achieve this, it implements
@@ -380,7 +380,7 @@ types:
 
 Returns an instance of the class defined by the L<QueryInterface>
 argument passed to the constructor (or the default class for the base
-interface if none is explicityly set) that can be used to query the
+interface if none is explicitly set) that can be used to query the
 currently selected model.
 
 =head1 PERLISH CONVENIENCE METHODS
@@ -407,7 +407,7 @@ model.  For a "live" alternative to this, see L</tied_property_hash>.
 
 This method is similar to the L</property_hash> method, except this
 method will recurse over children nodes, in effect creating a nested
-hashref datastructure representing a node and all of its associations.
+hashref data structure representing a node and all of its associations.
 
 B<Note:> This method performs no checks to ensure that it doesn't get
 stuck in a deep recursion loop, so be careful when using this.
@@ -458,7 +458,7 @@ undefined, a new blank node will be used.
   $object->hashref2rdf( \%hash, $subject );
 
 This method is the reverse of L</property_hash> and L</deep_prophash>
-in that it accpets a Perl hash reference and unwinds it into a setions
+in that it accepts a Perl hash reference and unwinds it into a set
 of triples in the RDF store. If the C<$subject> is missing or
 undefined a new blank node will be used.
 
