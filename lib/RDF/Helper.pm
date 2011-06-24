@@ -1,7 +1,7 @@
 package RDF::Helper;
 use 5.10.1;
 use Moose;
-our $VERSION = '1.99_02';
+our $VERSION = '2.0';
 
 use RDF::Helper::Statement;
 use RDF::Helper::Object;
