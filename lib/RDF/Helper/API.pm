@@ -1,6 +1,6 @@
 package RDF::Helper::API;
+use Class::Load;
 use Moose::Role;
-
 requires qw(
   arrayref2rdf
   assert_literal
@@ -87,7 +87,7 @@ sub new_query {
     my ( $query_string, $query_lang ) = @_;
 
     my $class = $self->query_interface;
-    Class::MOP::load_class($class);
+    Class::Load::load_class($class);
     return $class->new( $query_string, $query_lang, $self->model );
 }
 
