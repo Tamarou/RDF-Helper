@@ -130,7 +130,7 @@ sub add_statement {
     my $statement = shift;
 
     my @nodes = ();
-    foreach my $type qw( subject predicate object ) {
+    foreach my $type (qw( subject predicate object )) {
         push @nodes, $self->helper2native( $statement->$type );
     }
 
@@ -145,7 +145,7 @@ sub remove_statements {
     my $e = $self->get_enumerator(@_);
     while ( my $s = $e->next ) {
         my @nodes = ();
-        foreach my $type qw( subject predicate object ) {
+        foreach my $type (qw( subject predicate object )) {
             push @nodes, $self->helper2native( $s->$type );
         }
 
@@ -325,7 +325,7 @@ sub next {
 
     my $s     = undef;
     my @nodes = ();
-    foreach my $type qw( subject predicate object ) {
+    foreach my $type (qw( subject predicate object )) {
         push @nodes, process_node( $in->$type );
     }
     return RDF::Helper::Statement->new(@nodes);
